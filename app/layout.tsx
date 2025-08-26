@@ -9,7 +9,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "Blog & Novel - Trang cá nhân",
   description: "Blog cá nhân và tiểu thuyết online",
-    generator: 'v0.app'
 }
 
 export default function RootLayout({
