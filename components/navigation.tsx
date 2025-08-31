@@ -1,13 +1,23 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useTheme } from "next-themes"
-import { Moon, Sun, Menu, X, BookOpen, PenTool, Home, User, Settings } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { useTheme } from "next-themes";
+import {
+  Moon,
+  Sun,
+  Menu,
+  X,
+  BookOpen,
+  PenTool,
+  Home,
+  User,
+  Settings,
+} from "lucide-react";
 
 export default function Navigation() {
-  const [isOpen, setIsOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const [isOpen, setIsOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
@@ -18,7 +28,9 @@ export default function Navigation() {
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">Blog & Novel</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">
+              Blog & Novel
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -70,20 +82,25 @@ export default function Navigation() {
               <div className="relative w-5 h-5">
                 <Sun
                   className={`w-5 h-5 absolute transition-all duration-300 ${
-                    theme === "dark" ? "rotate-90 scale-0" : "rotate-0 scale-100"
+                    theme === "dark"
+                      ? "rotate-90 scale-0"
+                      : "rotate-0 scale-100"
                   }`}
                 />
                 <Moon
                   className={`w-5 h-5 absolute transition-all duration-300 ${
-                    theme === "dark" ? "rotate-0 scale-100" : "-rotate-90 scale-0"
+                    theme === "dark"
+                      ? "rotate-0 scale-100"
+                      : "-rotate-90 scale-0"
                   }`}
                 />
               </div>
             </button>
 
             {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
               {theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
             </div>
           </div>
 
@@ -140,5 +157,5 @@ export default function Navigation() {
         )}
       </div>
     </nav>
-  )
+  );
 }

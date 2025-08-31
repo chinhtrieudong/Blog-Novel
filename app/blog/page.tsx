@@ -110,6 +110,90 @@ export default function BlogPage() {
       image: "/placeholder.svg?height=200&width=400",
       author: "Ngô Thị H",
     },
+    {
+      id: 9,
+      title: "Những bài tập yoga cơ bản cho người mới bắt đầu",
+      excerpt:
+        "Hướng dẫn chi tiết về các tư thế yoga cơ bản, lợi ích của từng động tác và cách thực hiện đúng kỹ thuật để tránh chấn thương và đạt hiệu quả tối đa.",
+      category: "Sức khỏe",
+      date: "25 tháng 11, 2024",
+      views: 3421,
+      readTime: "12 phút đọc",
+      image: "/placeholder.svg?height=200&width=400",
+      author: "Lý Thị I",
+    },
+    {
+      id: 10,
+      title: "Review iPhone 15 Pro Max: Có đáng mua không?",
+      excerpt:
+        "Đánh giá chi tiết về iPhone 15 Pro Max sau 2 tháng sử dụng. So sánh với các phiên bản trước và đưa ra lời khuyên về việc có nên nâng cấp hay không.",
+      category: "Công nghệ",
+      date: "22 tháng 11, 2024",
+      views: 5678,
+      readTime: "18 phút đọc",
+      image: "/placeholder.svg?height=200&width=400",
+      author: "Trần Văn K",
+    },
+    {
+      id: 11,
+      title: "Cách nấu phở bò Nam Định chuẩn vị",
+      excerpt:
+        "Công thức nấu phở bò Nam Định với nước dùng đậm đà, bánh phở dai ngon và các loại gia vị đặc trưng. Hướng dẫn từng bước chi tiết để có được tô phở hoàn hảo.",
+      category: "Ẩm thực",
+      date: "20 tháng 11, 2024",
+      views: 2987,
+      readTime: "25 phút đọc",
+      image: "/placeholder.svg?height=200&width=400",
+      author: "Nguyễn Thị L",
+    },
+    {
+      id: 12,
+      title: "Những cuốn sách hay nhất về đầu tư tài chính",
+      excerpt:
+        "Danh sách 10 cuốn sách về đầu tư và quản lý tài chính cá nhân hay nhất mọi thời đại. Từ những tác phẩm kinh điển đến những cuốn sách hiện đại phù hợp với thị trường Việt Nam.",
+      category: "Sách",
+      date: "18 tháng 11, 2024",
+      views: 4123,
+      readTime: "14 phút đọc",
+      image: "/placeholder.svg?height=200&width=400",
+      author: "Phạm Văn M",
+    },
+    {
+      id: 13,
+      title: "Hành trình khám phá Đà Lạt mùa hoa dã quỳ",
+      excerpt:
+        "Chia sẻ kinh nghiệm du lịch Đà Lạt vào mùa hoa dã quỳ nở rộ. Những địa điểm ngắm hoa đẹp nhất, thời gian lý tưởng và các tips để có những bức ảnh đẹp.",
+      category: "Du lịch",
+      date: "15 tháng 11, 2024",
+      views: 3876,
+      readTime: "11 phút đọc",
+      image: "/placeholder.svg?height=200&width=400",
+      author: "Lê Thị N",
+    },
+    {
+      id: 14,
+      title: "Cách thiết kế CV chuyên nghiệp để tăng cơ hội việc làm",
+      excerpt:
+        "Hướng dẫn chi tiết về cách thiết kế CV ấn tượng, các lỗi thường gặp cần tránh và những tips để CV của bạn nổi bật giữa hàng trăm ứng viên khác.",
+      category: "Đời sống",
+      date: "12 tháng 11, 2024",
+      views: 5234,
+      readTime: "16 phút đọc",
+      image: "/placeholder.svg?height=200&width=400",
+      author: "Hoàng Thị O",
+    },
+    {
+      id: 15,
+      title: "Review series 'Wednesday' trên Netflix",
+      excerpt:
+        "Đánh giá chi tiết về series 'Wednesday' với diễn xuất xuất sắc của Jenna Ortega. Phân tích cốt truyện, nhân vật và những điểm nhấn đáng chú ý của bộ phim.",
+      category: "Phim ảnh",
+      date: "10 tháng 11, 2024",
+      views: 3456,
+      readTime: "13 phút đọc",
+      image: "/placeholder.svg?height=200&width=400",
+      author: "Vũ Văn P",
+    },
   ];
 
   return (
