@@ -1,10 +1,22 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { PenTool, BookOpen, Users, BarChart3, Plus, Edit, Trash2, Eye, Calendar, TrendingUp } from "lucide-react"
+import { useState } from "react";
+import {
+  PenTool,
+  BookOpen,
+  Users,
+  BarChart3,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Calendar,
+  TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("dashboard")
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const stats = {
     totalPosts: 127,
@@ -17,7 +29,7 @@ export default function AdminPage() {
       users: 234,
       views: 45678,
     },
-  }
+  };
 
   const recentPosts = [
     {
@@ -65,7 +77,7 @@ export default function AdminPage() {
       category: "Phim ảnh",
       author: "Admin",
     },
-  ]
+  ];
 
   const recentNovels = [
     {
@@ -113,7 +125,7 @@ export default function AdminPage() {
       views: 28900,
       rating: 4.7,
     },
-  ]
+  ];
 
   // Thêm data cho user management
   const recentUsers = [
@@ -144,22 +156,26 @@ export default function AdminPage() {
       role: "Độc giả",
       avatar: "/placeholder.svg?height=40&width=40",
     },
-  ]
+  ];
 
   const tabs = [
     { id: "dashboard", name: "Tổng quan", icon: BarChart3 },
     { id: "posts", name: "Quản lý Blog", icon: PenTool },
     { id: "novels", name: "Quản lý Tiểu thuyết", icon: BookOpen },
     { id: "users", name: "Người dùng", icon: Users },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bảng điều khiển quản trị</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Quản lý nội dung blog và tiểu thuyết của bạn</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Bảng điều khiển quản trị
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Quản lý nội dung blog và tiểu thuyết của bạn
+          </p>
         </div>
 
         {/* Tabs */}
@@ -167,7 +183,7 @@ export default function AdminPage() {
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex space-x-8">
               {tabs.map((tab) => {
-                const Icon = tab.icon
+                const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
@@ -181,7 +197,7 @@ export default function AdminPage() {
                     <Icon className="w-5 h-5 mr-2" />
                     {tab.name}
                   </button>
-                )
+                );
               })}
             </nav>
           </div>
@@ -198,8 +214,12 @@ export default function AdminPage() {
                     <PenTool className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng bài viết</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalPosts}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Tổng bài viết
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {stats.totalPosts}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -210,8 +230,12 @@ export default function AdminPage() {
                     <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng tiểu thuyết</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalNovels}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Tổng tiểu thuyết
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {stats.totalNovels}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -222,8 +246,12 @@ export default function AdminPage() {
                     <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Người dùng</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalUsers}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Người dùng
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {stats.totalUsers}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -234,7 +262,9 @@ export default function AdminPage() {
                     <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Lượt xem</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Lượt xem
+                    </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {stats.totalViews.toLocaleString()}
                     </p>
@@ -247,12 +277,17 @@ export default function AdminPage() {
             <div className="grid lg:grid-cols-2 gap-8">
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Bài viết gần đây</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Bài viết gần đây
+                  </h3>
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
                     {recentPosts.map((post) => (
-                      <div key={post.id} className="flex items-center justify-between">
+                      <div
+                        key={post.id}
+                        className="flex items-center justify-between"
+                      >
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                             {post.title}
@@ -281,12 +316,17 @@ export default function AdminPage() {
 
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Tiểu thuyết gần đây</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Tiểu thuyết gần đây
+                  </h3>
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
                     {recentNovels.map((novel) => (
-                      <div key={novel.id} className="flex items-center justify-between">
+                      <div
+                        key={novel.id}
+                        className="flex items-center justify-between"
+                      >
                         <div className="flex-1">
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                             {novel.title}
@@ -320,11 +360,16 @@ export default function AdminPage() {
         {activeTab === "posts" && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Blog</h2>
-              <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Quản lý Blog
+              </h2>
+              <Link
+                href="/admin/posts/new"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 <Plus className="w-5 h-5 mr-2" />
                 Tạo bài viết mới
-              </button>
+              </Link>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
@@ -353,7 +398,9 @@ export default function AdminPage() {
                     {recentPosts.map((post) => (
                       <tr key={post.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">{post.title}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {post.title}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -398,7 +445,9 @@ export default function AdminPage() {
         {activeTab === "novels" && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Tiểu thuyết</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Quản lý Tiểu thuyết
+              </h2>
               <button className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                 <Plus className="w-5 h-5 mr-2" />
                 Tạo tiểu thuyết mới
@@ -431,7 +480,9 @@ export default function AdminPage() {
                     {recentNovels.map((novel) => (
                       <tr key={novel.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">{novel.title}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {novel.title}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {novel.chapters}
@@ -476,7 +527,9 @@ export default function AdminPage() {
         {activeTab === "users" && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Người dùng</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Quản lý Người dùng
+              </h2>
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Tổng: {stats.totalUsers.toLocaleString()} người dùng
               </div>
@@ -490,7 +543,9 @@ export default function AdminPage() {
                     <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Người dùng hoạt động</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Người dùng hoạt động
+                    </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {(stats.totalUsers * 0.85).toFixed(0)}
                     </p>
@@ -503,8 +558,12 @@ export default function AdminPage() {
                     <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tăng trưởng tháng này</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">+{stats.monthlyGrowth.users}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Tăng trưởng tháng này
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      +{stats.monthlyGrowth.users}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -514,8 +573,12 @@ export default function AdminPage() {
                     <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tỷ lệ hoạt động</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">85%</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Tỷ lệ hoạt động
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      85%
+                    </p>
                   </div>
                 </div>
               </div>
@@ -524,7 +587,9 @@ export default function AdminPage() {
             {/* Recent Users Table */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Người dùng mới nhất</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Người dùng mới nhất
+                </h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -558,8 +623,12 @@ export default function AdminPage() {
                               alt={user.name}
                             />
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.role}</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {user.name}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {user.role}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -603,5 +672,5 @@ export default function AdminPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

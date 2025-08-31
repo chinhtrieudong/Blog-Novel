@@ -1,57 +1,31 @@
 import Link from "next/link"
 import { Star, BookOpen, Users, Heart, Share2, MessageCircle, ChevronRight, Calendar, Eye } from "lucide-react"
+import { getNovelById, getChaptersByNovelId } from "@/lib/novel-data"
 
 export default function NovelDetailPage({ params }: { params: { id: string } }) {
-  const novel = {
-    id: 1,
-    title: "Hành Trình Đến Với Ánh Sáng",
-    author: "Nguyễn Minh Tâm",
-    description:
-      "Câu chuyện về một chàng trai trẻ tên Minh khám phá thế giới ma thuật đầy bí ẩn. Từ một người bình thường, anh dần khám phá ra những sức mạnh tiềm ẩn trong mình và bắt đầu hành trình tìm kiếm ánh sáng để cứu rỗi thế giới khỏi bóng tối. Với những cuộc phiêu lưu kỳ thú, những người bạn đồng hành trung thành và những thử thách khó khăn, Minh sẽ trưởng thành và trở thành một pháp sư mạnh mẽ. Tác phẩm kết hợp giữa yếu tố ma thuật cổ điển và những ý tưởng hiện đại, tạo nên một thế giới fantasy độc đáo và hấp dẫn.",
-    genre: "Fantasy",
-    chapters: 45,
-    status: "Đang cập nhật",
-    rating: 4.8,
-    reviews: 1256,
-    views: 25420,
-    likes: 3241,
-    lastUpdate: "2 giờ trước",
-    cover: "/placeholder.svg?height=400&width=300",
-    tags: ["Ma thuật", "Phiêu lưu", "Tình bạn", "Trưởng thành", "Chiến đấu", "Thế giới khác"],
-    publishDate: "15 tháng 6, 2024",
-    totalWords: 450000,
-    averageChapterLength: 10000,
+  const novel = getNovelById(parseInt(params.id))
+  
+  if (!novel) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Không tìm thấy tiểu thuyết
+          </h1>
+          <Link
+            href="/novels"
+            className="text-purple-600 dark:text-purple-400 hover:underline"
+          >
+            Quay lại danh sách tiểu thuyết
+          </Link>
+        </div>
+      </div>
+    )
   }
 
-  const chapters = [
-    {
-      id: 1,
-      title: "Chương 1: Khởi đầu của hành trình",
-      publishDate: "15 tháng 6, 2024",
-      views: 2234,
-      wordCount: 8500,
-    },
-    { id: 2, title: "Chương 2: Phát hiện sức mạnh", publishDate: "18 tháng 6, 2024", views: 2156, wordCount: 9200 },
-    { id: 3, title: "Chương 3: Người thầy đầu tiên", publishDate: "22 tháng 6, 2024", views: 2089, wordCount: 10100 },
-    { id: 4, title: "Chương 4: Bài học đầu tiên", publishDate: "25 tháng 6, 2024", views: 2023, wordCount: 9800 },
-    { id: 5, title: "Chương 5: Cuộc gặp gỡ định mệnh", publishDate: "29 tháng 6, 2024", views: 1987, wordCount: 11200 },
-    { id: 6, title: "Chương 6: Thử thách đầu tiên", publishDate: "2 tháng 7, 2024", views: 1945, wordCount: 10500 },
-    { id: 7, title: "Chương 7: Sức mạnh thức tỉnh", publishDate: "5 tháng 7, 2024", views: 1876, wordCount: 12000 },
-    { id: 8, title: "Chương 8: Đồng đội mới", publishDate: "9 tháng 7, 2024", views: 1823, wordCount: 9700 },
-    { id: 9, title: "Chương 9: Nhiệm vụ nguy hiểm", publishDate: "12 tháng 7, 2024", views: 1756, wordCount: 11800 },
-    { id: 10, title: "Chương 10: Trận chiến đầu tiên", publishDate: "16 tháng 7, 2024", views: 1689, wordCount: 13200 },
-    { id: 11, title: "Chương 11: Bí mật được tiết lộ", publishDate: "19 tháng 7, 2024", views: 1634, wordCount: 10900 },
-    { id: 12, title: "Chương 12: Liên minh bất ngờ", publishDate: "23 tháng 7, 2024", views: 1578, wordCount: 9600 },
-    { id: 13, title: "Chương 13: Thế giới ngầm", publishDate: "26 tháng 7, 2024", views: 1523, wordCount: 11400 },
-    {
-      id: 14,
-      title: "Chương 14: Cuộc chiến trong bóng tối",
-      publishDate: "30 tháng 7, 2024",
-      views: 1467,
-      wordCount: 12600,
-    },
-    { id: 15, title: "Chương 15: Ánh sáng hy vọng", publishDate: "2 tháng 8, 2024", views: 1412, wordCount: 10800 },
-  ]
+  const chapters = getChaptersByNovelId(novel.id)
+
+
 
   const comments = [
     {
