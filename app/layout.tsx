@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "Blog & Novel - Trang cá nhân",
   description: "Blog cá nhân và tiểu thuyết online",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
