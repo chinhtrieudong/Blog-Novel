@@ -1,5 +1,3 @@
-"use client";
-
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,12 +9,6 @@ export function ThemeToggle() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  if (!mounted) {
-    return (
-      <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 w-10 h-10 animate-pulse" />
-    );
-  }
 
   return (
     <div className="relative group">
@@ -50,7 +42,7 @@ export function ThemeToggle() {
       {/* Tooltip */}
       {/* Tooltip */}
       <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-        {theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
+        {mounted && (theme === "dark" ? "Chế độ sáng" : "Chế độ tối")}
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
       </div>
     </div>
