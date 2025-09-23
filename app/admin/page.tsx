@@ -14,9 +14,23 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  DeleteConfirmationModal,
+  UserViewModal,
+  UserEditModal,
+} from "@/components/admin/modals";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: number;
+    type: string;
+    title: string;
+  } | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const stats = {
     totalPosts: 127,
@@ -164,6 +178,42 @@ export default function AdminPage() {
     { id: "novels", name: "Quản lý Tiểu thuyết", icon: BookOpen },
     { id: "users", name: "Người dùng", icon: Users },
   ];
+
+  const handleDeleteClick = (id: number, type: string, title: string) => {
+    setDeleteItem({ id, type, title });
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteItem) {
+      console.log(`Deleting ${deleteItem.type} with id ${deleteItem.id}`);
+      // Here you would implement the actual delete logic
+      setIsDeleteModalOpen(false);
+      setDeleteItem(null);
+    }
+  };
+
+  const handleUserView = (user: any) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const handleUserEdit = (user: any) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (formData: {
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+  }) => {
+    console.log("Updating user:", selectedUser?.id, formData);
+    // Here you would implement the actual update logic
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -436,7 +486,12 @@ export default function AdminPage() {
                             >
                               <Edit className="w-4 h-4" />
                             </Link>
-                            <button className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                            <button
+                              onClick={() =>
+                                handleDeleteClick(post.id, "post", post.title)
+                              }
+                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -514,16 +569,28 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
-                            <button className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
+                            <Link
+                              href={`/novels/${novel.id}`}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                            >
                               <Eye className="w-4 h-4" />
-                            </button>
+                            </Link>
                             <Link
                               href={`/admin/novels/edit/${novel.id}`}
                               className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
                             >
                               <Edit className="w-4 h-4" />
                             </Link>
-                            <button className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                            <button
+                              onClick={() =>
+                                handleDeleteClick(
+                                  novel.id,
+                                  "novel",
+                                  novel.title
+                                )
+                              }
+                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -665,13 +732,24 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
-                            <button className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
+                            <button
+                              onClick={() => handleUserView(user)}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300">
+                            <button
+                              onClick={() => handleUserEdit(user)}
+                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
-                            <button className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                            <button
+                              onClick={() =>
+                                handleDeleteClick(user.id, "user", user.name)
+                              }
+                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -684,6 +762,28 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* Modals */}
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          itemType={deleteItem?.type || ""}
+          itemTitle={deleteItem?.title || ""}
+        />
+
+        <UserViewModal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          user={selectedUser}
+        />
+
+        <UserEditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSubmit={handleEditSubmit}
+          user={selectedUser}
+        />
       </div>
     </div>
   );
