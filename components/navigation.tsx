@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/lib/auth-context";
 import {
   Moon,
   Sun,
@@ -13,11 +14,14 @@ import {
   Home,
   User,
   Settings,
+  LogOut,
+  UserCircle,
 } from "lucide-react";
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
@@ -56,20 +60,41 @@ export default function Navigation() {
               <BookOpen className="w-4 h-4" />
               <span>Tiểu thuyết</span>
             </Link>
-            <Link
-              href="/login"
-              className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <User className="w-4 h-4" />
-              <span>Đăng nhập</span>
-            </Link>
-            <Link
-              href="/admin"
-              className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              <span>Quản trị</span>
-            </Link>
+
+            {isAuthenticated ? (
+              <>
+                {user?.role === "ADMIN" && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Quản trị</span>
+                  </Link>
+                )}
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                    <UserCircle className="w-4 h-4" />
+                    <span className="text-sm">{user?.username}</span>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                <User className="w-4 h-4" />
+                <span>Đăng nhập</span>
+              </Link>
+            )}
           </div>
 
           {/* Theme toggle button với animation */}
@@ -138,20 +163,44 @@ export default function Navigation() {
                 <BookOpen className="w-4 h-4" />
                 <span>Tiểu thuyết</span>
               </Link>
-              <Link
-                href="/login"
-                className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-              >
-                <User className="w-4 h-4" />
-                <span>Đăng nhập</span>
-              </Link>
-              <Link
-                href="/admin"
-                className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Quản trị</span>
-              </Link>
+
+              {isAuthenticated ? (
+                <>
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Quản trị</span>
+                    </Link>
+                  )}
+                  <div className="flex items-center justify-between px-3 py-2 text-gray-700 dark:text-gray-300">
+                    <div className="flex items-center space-x-2">
+                      <UserCircle className="w-4 h-4" />
+                      <span className="text-sm">{user?.username}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsOpen(false);
+                      }}
+                      className="flex items-center space-x-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Đăng nhập</span>
+                </Link>
+              )}
             </div>
           </div>
         )}
