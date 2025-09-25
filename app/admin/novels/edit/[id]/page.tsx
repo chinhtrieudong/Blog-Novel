@@ -3,23 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Editor } from "@tinymce/tinymce-react";
-import { ChevronLeft, Save, Send, XCircle } from "lucide-react";
+import { ChevronLeft, Save, Send, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-// Interface for Novel Data (Replace with your actual interface)
-interface Novel {
-  id: string;
-  novelTitle: string;
-  author: string;
-  genre: string;
-  synopsis: string;
-  content: string;
-  coverImage: string;
-  status: string;
-}
+import { useAuth } from "@/lib/auth-context";
+import apiClient from "@/lib/api-client";
+import {
+  NovelResponse,
+  NovelRequest,
+  GenreResponse,
+  NovelStatus,
+} from "@/types/api";
 
 export default function EditNovelPage({ params }: { params: { id: string } }) {
-  const [novel, setNovel] = useState<Novel | null>(null);
+  const [novel, setNovel] = useState<NovelResponse | null>(null);
   const [novelTitle, setNovelTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
@@ -99,7 +95,7 @@ export default function EditNovelPage({ params }: { params: { id: string } }) {
 
     console.log("Updated novel data:", updatedNovelData);
     // TODO: Implement API call to update novel
-    router.push("/admin/novels");
+    router.push("/admin");
   };
 
   if (!novel) {
@@ -112,7 +108,7 @@ export default function EditNovelPage({ params }: { params: { id: string } }) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Link
-              href="/admin/novels"
+              href="/admin"
               className="mr-4 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <ChevronLeft className="w-5 h-5" />
