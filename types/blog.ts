@@ -1,43 +1,36 @@
-export interface Post {
+// Re-export API types for backward compatibility
+export type {
+  PostResponse as Post,
+  CategoryResponse as Category,
+  TagResponse as Tag,
+  PostRequest as CreatePostInput,
+} from "./api";
+
+// Legacy interfaces for backward compatibility
+export interface BlogPost {
   id: number;
   title: string;
   content: string;
-  excerpt?: string;
-  slug: string;
-  featuredImage?: string;
-  status: "draft" | "published" | "pending";
+  excerpt: string;
   category: string;
-  tags?: string[];
-  author: {
-    id: number;
-    name: string;
-    avatar?: string;
-  };
-  publishDate?: string;
-  createdAt: string;
-  updatedAt: string;
+  date: string;
   views: number;
+  readTime: string;
+  image: string;
+  author: {
+    name: string;
+    avatar: string;
+    bio: string;
+  };
+  tags: string[];
+  relatedPosts: number[];
 }
 
-export interface Category {
+export interface Comment {
   id: number;
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-export interface Tag {
-  id: number;
-  name: string;
-  slug: string;
-}
-
-export interface CreatePostInput {
-  title: string;
+  author: string;
+  avatar: string;
   content: string;
-  excerpt?: string;
-  featuredImage?: string;
-  status: "draft" | "published" | "pending";
-  category: string;
-  tags?: string[];
+  date: string;
+  likes: number;
 }
