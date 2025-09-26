@@ -3,102 +3,152 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Editor } from "@tinymce/tinymce-react";
-import { ChevronLeft, Save, Send, XCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  Save,
+  Send,
+  XCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
-
-// Interface for Post Data (Replace with your actual interface)
-interface Post {
-  id: string;
-  title: string;
-  category: string;
-  excerpt: string;
-  content: string;
-  featuredImage: string;
-  status: string;
-}
+import { useAuth } from "@/lib/auth-context";
+import apiClient from "@/lib/api-client";
+import { PostResponse, PostRequest, CategoryResponse } from "@/types/api";
 
 export default function EditPostPage({ params }: { params: { id: string } }) {
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<PostResponse | null>(null);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [excerpt, setExcerpt] = useState("");
-  const [featuredImage, setFeaturedImage] = useState("");
+  const [coverImage, setCoverImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [status, setStatus] = useState("draft");
+  const [status, setStatus] = useState("DRAFT");
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const editorRef = useRef<any>(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   const { id } = params;
 
-  const categories = [
-    "Công nghệ",
-    "Đời sống",
-    "Sách",
-    "Ẩm thực",
-    "Du lịch",
-    "Phim ảnh",
-  ];
-
   useEffect(() => {
-    // Fetch post data based on ID
-    // Replace this with your actual data fetching logic (e.g., from an API)
-    async function fetchPost() {
-      // Simulate fetching data
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const mockPost: Post = {
-        id: id,
-        title: `Bài viết ${id}`,
-        category: "Công nghệ",
-        excerpt: "Đây là một bài viết mẫu.",
-        content: "Nội dung bài viết mẫu.",
-        featuredImage: "",
-        status: "Đã xuất bản",
-      };
-      setTitle(mockPost.title);
-      setCategory(mockPost.category);
-      setExcerpt(mockPost.excerpt);
-      setFeaturedImage(mockPost.featuredImage);
-      setStatus(mockPost.status);
-      setPost(mockPost);
+    async function fetchData() {
+      try {
+        // Fetch post data and categories
+        const [postResponse] = await Promise.all([
+          apiClient.getPostById(parseInt(id)),
+        ]);
+
+        const postData = postResponse.data;
+        setPost(postData);
+        setTitle(postData.title);
+        setSelectedCategories(postData.categories.map((cat) => cat.id));
+        setExcerpt(postData.excerpt || "");
+        setStatus(postData.status);
+        setImagePreview(postData.coverImageUrl || "");
+      } catch (err) {
+        console.error("Failed to fetch post data:", err);
+        setError("Không thể tải dữ liệu bài viết.");
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    fetchPost();
+    fetchData();
   }, [id]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
-        setFeaturedImage(file.name);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const content = editorRef.current?.getContent();
+    if (!post) return;
 
-    const updatedPostData = {
-      id: post?.id,
-      title,
-      category,
-      excerpt,
-      content,
-      featuredImage,
-      status,
-      updatedAt: new Date().toISOString(),
-    };
+    setIsSaving(true);
+    setError(null);
 
-    console.log("Updated post data:", updatedPostData);
-    // TODO: Implement API call to update post
-    router.push("/admin");
+    try {
+      const content = editorRef.current?.getContent();
+
+      const postData: PostRequest = {
+        title,
+        content,
+        status: status as "DRAFT" | "PUBLISHED",
+        categoryIds: selectedCategories,
+      };
+
+      if (coverImage) {
+        postData.coverImage = coverImage;
+      }
+
+      await apiClient.updatePost(post.id, postData);
+      router.push("/admin/posts");
+    } catch (err) {
+      console.error("Failed to update post:", err);
+      setError("Không thể cập nhật bài viết. Vui lòng thử lại.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="text-gray-600 dark:text-gray-400">
+            Đang tải dữ liệu bài viết...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!post) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Không tìm thấy bài viết.
+          </p>
+          <Link
+            href="/admin/posts"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Quay lại danh sách
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -107,7 +157,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Link
-              href="/admin/posts"
+              href="/admin"
               className="mr-4 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -152,19 +202,30 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Chuyên mục
               </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                required
-              >
-                <option value="">Chọn chuyên mục</option>
+              <div className="space-y-2">
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                  <label key={cat.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(cat.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCategories([
+                            ...selectedCategories,
+                            cat.id,
+                          ]);
+                        } else {
+                          setSelectedCategories(
+                            selectedCategories.filter((id) => id !== cat.id)
+                          );
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    {cat.name}
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -255,9 +316,22 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
               <XCircle className="w-4 h-4 inline-block mr-2" />
               Hủy bỏ
             </Link>
-            <button className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-              <Save className="w-4 h-4 inline-block mr-2" />
-              Lưu thay đổi
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang lưu...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Lưu thay đổi
+                </>
+              )}
             </button>
           </div>
         </form>
