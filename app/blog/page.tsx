@@ -1,8 +1,22 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Calendar, Eye, Tag, Search, Filter } from "lucide-react";
+import { Calendar, Eye, Tag, Search, Filter, Loader2 } from "lucide-react";
+import apiClient from "@/lib/api-client";
+import { PostResponse, CategoryResponse, PostQueryParams } from "@/types/api";
 
 export default function BlogPage() {
-  const categories = [
+  const [posts, setPosts] = useState<PostResponse[]>([]);
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const categoryNames = [
     "Tất cả",
     "Công nghệ",
     "Đời sống",
@@ -13,188 +27,76 @@ export default function BlogPage() {
     "Sức khỏe",
   ];
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Những xu hướng công nghệ đáng chú ý năm 2024",
-      excerpt:
-        "Khám phá những công nghệ mới nổi và xu hướng phát triển trong năm 2024, từ AI generative, blockchain 3.0 đến metaverse và Web3. Cùng tìm hiểu cách những công nghệ này sẽ thay đổi cuộc sống của chúng ta.",
-      category: "Công nghệ",
-      date: "15 tháng 12, 2024",
-      views: 2847,
-      readTime: "8 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Nguyễn Văn A",
-    },
-    {
-      id: 2,
-      title: "Cách cân bằng cuộc sống và công việc hiệu quả",
-      excerpt:
-        "Những bí quyết giúp bạn duy trì sự cân bằng giữa công việc và cuộc sống cá nhân. Học cách quản lý thời gian, thiết lập ranh giới và tìm kiếm hạnh phúc trong từng khoảnh khắc.",
-      category: "Đời sống",
-      date: "12 tháng 12, 2024",
-      views: 1923,
-      readTime: "6 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Trần Thị B",
-    },
-    {
-      id: 3,
-      title: "Hành trình khám phá Sapa mùa đông",
-      excerpt:
-        "Chia sẻ trải nghiệm du lịch Sapa trong mùa đông với những cảnh đẹp tuyệt vời, văn hóa độc đáo của các dân tộc thiểu số và những món ăn đặc sản không thể bỏ qua.",
-      category: "Du lịch",
-      date: "10 tháng 12, 2024",
-      views: 3156,
-      readTime: "12 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Lê Văn C",
-    },
-    {
-      id: 4,
-      title: 'Review sách: "Atomic Habits" - Thói quen nguyên tử',
-      excerpt:
-        "Đánh giá chi tiết về cuốn sách nổi tiếng của James Clear và những bài học quý giá về cách xây dựng thói quen tích cực, loại bỏ thói quen xấu và thay đổi cuộc sống từng ngày một.",
-      category: "Sách",
-      date: "8 tháng 12, 2024",
-      views: 1567,
-      readTime: "10 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Phạm Thị D",
-    },
-    {
-      id: 5,
-      title: "Top 10 bộ phim hay nhất năm 2024",
-      excerpt:
-        "Danh sách những bộ phim đáng xem nhất trong năm với đánh giá chi tiết về cốt truyện, diễn xuất và kỹ xảo. Từ blockbuster Hollywood đến những tác phẩm indie độc đáo.",
-      category: "Phim ảnh",
-      date: "5 tháng 12, 2024",
-      views: 4321,
-      readTime: "15 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Hoàng Văn E",
-    },
-    {
-      id: 6,
-      title: "Hướng dẫn thiết lập workspace tại nhà hiệu quả",
-      excerpt:
-        "Những tips và tricks để tạo ra một không gian làm việc tại nhà thoải mái và hiệu quả. Từ việc chọn bàn ghế, ánh sáng đến cách trang trí để tăng năng suất làm việc.",
-      category: "Đời sống",
-      date: "3 tháng 12, 2024",
-      views: 2892,
-      readTime: "7 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Vũ Thị F",
-    },
-    {
-      id: 7,
-      title: "Khám phá ẩm thực đường phố Hà Nội",
-      excerpt:
-        "Hành trình khám phá những món ăn đường phố đặc trưng của Hà Nội, từ phở, bún chả đến những món ăn vặt độc đáo chỉ có ở thủ đô ngàn năm văn hiến.",
-      category: "Ẩm thực",
-      date: "1 tháng 12, 2024",
-      views: 2156,
-      readTime: "9 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Đỗ Văn G",
-    },
-    {
-      id: 8,
-      title: "Tự học lập trình: Lộ trình cho người mới bắt đầu",
-      excerpt:
-        "Hướng dẫn chi tiết về cách tự học lập trình từ con số 0, lựa chọn ngôn ngữ phù hợp, tài nguyên học tập và cách xây dựng portfolio để tìm việc làm.",
-      category: "Công nghệ",
-      date: "28 tháng 11, 2024",
-      views: 3789,
-      readTime: "20 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Ngô Thị H",
-    },
-    {
-      id: 9,
-      title: "Những bài tập yoga cơ bản cho người mới bắt đầu",
-      excerpt:
-        "Hướng dẫn chi tiết về các tư thế yoga cơ bản, lợi ích của từng động tác và cách thực hiện đúng kỹ thuật để tránh chấn thương và đạt hiệu quả tối đa.",
-      category: "Sức khỏe",
-      date: "25 tháng 11, 2024",
-      views: 3421,
-      readTime: "12 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Lý Thị I",
-    },
-    {
-      id: 10,
-      title: "Review iPhone 15 Pro Max: Có đáng mua không?",
-      excerpt:
-        "Đánh giá chi tiết về iPhone 15 Pro Max sau 2 tháng sử dụng. So sánh với các phiên bản trước và đưa ra lời khuyên về việc có nên nâng cấp hay không.",
-      category: "Công nghệ",
-      date: "22 tháng 11, 2024",
-      views: 5678,
-      readTime: "18 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Trần Văn K",
-    },
-    {
-      id: 11,
-      title: "Cách nấu phở bò Nam Định chuẩn vị",
-      excerpt:
-        "Công thức nấu phở bò Nam Định với nước dùng đậm đà, bánh phở dai ngon và các loại gia vị đặc trưng. Hướng dẫn từng bước chi tiết để có được tô phở hoàn hảo.",
-      category: "Ẩm thực",
-      date: "20 tháng 11, 2024",
-      views: 2987,
-      readTime: "25 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Nguyễn Thị L",
-    },
-    {
-      id: 12,
-      title: "Những cuốn sách hay nhất về đầu tư tài chính",
-      excerpt:
-        "Danh sách 10 cuốn sách về đầu tư và quản lý tài chính cá nhân hay nhất mọi thời đại. Từ những tác phẩm kinh điển đến những cuốn sách hiện đại phù hợp với thị trường Việt Nam.",
-      category: "Sách",
-      date: "18 tháng 11, 2024",
-      views: 4123,
-      readTime: "14 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Phạm Văn M",
-    },
-    {
-      id: 13,
-      title: "Hành trình khám phá Đà Lạt mùa hoa dã quỳ",
-      excerpt:
-        "Chia sẻ kinh nghiệm du lịch Đà Lạt vào mùa hoa dã quỳ nở rộ. Những địa điểm ngắm hoa đẹp nhất, thời gian lý tưởng và các tips để có những bức ảnh đẹp.",
-      category: "Du lịch",
-      date: "15 tháng 11, 2024",
-      views: 3876,
-      readTime: "11 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Lê Thị N",
-    },
-    {
-      id: 14,
-      title: "Cách thiết kế CV chuyên nghiệp để tăng cơ hội việc làm",
-      excerpt:
-        "Hướng dẫn chi tiết về cách thiết kế CV ấn tượng, các lỗi thường gặp cần tránh và những tips để CV của bạn nổi bật giữa hàng trăm ứng viên khác.",
-      category: "Đời sống",
-      date: "12 tháng 11, 2024",
-      views: 5234,
-      readTime: "16 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Hoàng Thị O",
-    },
-    {
-      id: 15,
-      title: "Review series 'Wednesday' trên Netflix",
-      excerpt:
-        "Đánh giá chi tiết về series 'Wednesday' với diễn xuất xuất sắc của Jenna Ortega. Phân tích cốt truyện, nhân vật và những điểm nhấn đáng chú ý của bộ phim.",
-      category: "Phim ảnh",
-      date: "10 tháng 11, 2024",
-      views: 3456,
-      readTime: "13 phút đọc",
-      image: "/placeholder.svg?height=200&width=400",
-      author: "Vũ Văn P",
-    },
-  ];
+  useEffect(() => {
+    fetchPosts();
+  }, [currentPage, selectedCategory]);
+
+  const fetchPosts = async () => {
+    try {
+      setIsLoading(true);
+      const params: PostQueryParams = {
+        page: currentPage - 1, // API uses 0-based pagination
+        size: 12,
+      };
+
+      if (selectedCategory && selectedCategory !== "Tất cả") {
+        // Find category ID by name
+        const categoryId = categories.find(
+          (cat) => cat.name === selectedCategory
+        )?.id;
+        if (categoryId) {
+          params.categoryId = categoryId;
+        }
+      }
+
+      const response = await apiClient.getPosts(params);
+      setPosts(response.data.content);
+      setTotalPages(response.data.totalPages);
+    } catch (err) {
+      console.error("Failed to fetch posts:", err);
+      setError("Không thể tải bài viết. Vui lòng thử lại sau.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      fetchPosts();
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await apiClient.searchPosts({
+        q: searchQuery,
+        page: 0,
+        size: 12,
+      });
+      setPosts(response.data.content);
+      setTotalPages(response.data.totalPages);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setError("Không thể tìm kiếm bài viết.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const calculateReadTime = (content: string) => {
+    const wordsPerMinute = 200;
+    const wordCount = content.split(/\s+/).length;
+    const readTime = Math.ceil(wordCount / wordsPerMinute);
+    return `${readTime} phút đọc`;
+  };
 
   return (
     <div className="min-h-screen py-8">
@@ -229,11 +131,12 @@ export default function BlogPage() {
 
           {/* Categories */}
           <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
+            {categoryNames.map((category) => (
               <button
                 key={category}
+                onClick={() => setSelectedCategory(category)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  category === "Tất cả"
+                  selectedCategory === category
                     ? "bg-blue-600 text-white"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
@@ -244,61 +147,97 @@ export default function BlogPage() {
           </div>
         </div>
 
-        {/* Blog Posts Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogPosts.map((post) => (
-            <article
-              key={post.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600 dark:text-gray-400">
+              Đang tải bài viết...
+            </span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+            <button
+              onClick={fetchPosts}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              <div className="aspect-video bg-gray-200 dark:bg-gray-700">
-                <img
-                  src={post.image || "/placeholder.svg"}
-                  alt={post.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              Thử lại
+            </button>
+          </div>
+        )}
 
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                    <Tag className="w-3 h-3 mr-1" />
-                    {post.category}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {post.readTime}
-                  </span>
+        {/* Blog Posts Grid */}
+        {!isLoading && !error && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.map((post) => (
+              <article
+                key={post.id}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
+              >
+                <div className="aspect-video bg-gray-200 dark:bg-gray-700">
+                  <img
+                    src={post.coverImageUrl || "/placeholder.svg"}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
-                  {post.title}
-                </h2>
-
-                <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
-                  {post.excerpt}
-                </p>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    <span>{post.date}</span>
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                      <Tag className="w-3 h-3 mr-1" />
+                      {post.categories.length > 0
+                        ? post.categories[0].name
+                        : "Chưa phân loại"}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {calculateReadTime(post.content)}
+                    </span>
                   </div>
-                  <div className="flex items-center">
-                    <Eye className="w-4 h-4 mr-1" />
-                    <span>{post.views.toLocaleString()} lượt xem</span>
+
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
+                    {post.title}
+                  </h2>
+
+                  <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                    {post.excerpt || post.content.substring(0, 150) + "..."}
+                  </p>
+
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      <span>{formatDate(post.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Eye className="w-4 h-4 mr-1" />
+                      <span>{post.views.toLocaleString()} lượt xem</span>
+                    </div>
                   </div>
+
+                  <Link
+                    href={`/blog/${post.id}`}
+                    className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  >
+                    Đọc tiếp →
+                  </Link>
                 </div>
+              </article>
+            ))}
+          </div>
+        )}
 
-                <Link
-                  href={`/blog/${post.id}`}
-                  className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Đọc tiếp →
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+        {/* Empty State */}
+        {!isLoading && !error && posts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Không có bài viết nào để hiển thị.
+            </p>
+          </div>
+        )}
 
         {/* Pagination */}
         <div className="flex justify-center mt-12">

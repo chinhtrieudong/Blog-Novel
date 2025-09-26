@@ -1,46 +1,132 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLogin, setIsLogin] = useState(true)
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    fullName: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const { login, register } = useAuth();
+  const router = useRouter();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      if (isLogin) {
+        // Login
+        await login(formData.username, formData.password);
+        router.push("/");
+      } else {
+        // Register
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error("Mật khẩu xác nhận không khớp");
+        }
+
+        await register({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        });
+        router.push("/");
+      }
+    } catch (err) {
+      console.error("Authentication error:", err);
+      setError(
+        err instanceof Error ? err.message : "Đã xảy ra lỗi. Vui lòng thử lại."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{isLogin ? "Đăng nhập" : "Đăng ký"}</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {isLogin ? "Đăng nhập" : "Đăng ký"}
+          </h2>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {isLogin ? "Chào mừng bạn quay trở lại!" : "Tạo tài khoản mới để bắt đầu"}
+            {isLogin
+              ? "Chào mừng bạn quay trở lại!"
+              : "Tạo tài khoản mới để bắt đầu"}
           </p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8">
-          <form className="space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+              <span className="text-red-600 dark:text-red-400 text-sm">
+                {error}
+              </span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Họ và tên
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Tên đăng nhập
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
-                    id="name"
-                    name="name"
+                    id="username"
+                    name="username"
                     type="text"
                     required
+                    value={formData.username}
+                    onChange={handleInputChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Nhập họ và tên"
+                    placeholder="Nhập tên đăng nhập"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
                 Email
               </label>
               <div className="relative">
@@ -50,6 +136,8 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   required
+                  value={formData.email}
+                  onChange={handleInputChange}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Nhập địa chỉ email"
                 />
@@ -57,7 +145,10 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
                 Mật khẩu
               </label>
               <div className="relative">
@@ -67,6 +158,8 @@ export default function LoginPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
+                  value={formData.password}
+                  onChange={handleInputChange}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Nhập mật khẩu"
                 />
@@ -75,7 +168,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -95,6 +192,8 @@ export default function LoginPage() {
                     name="confirmPassword"
                     type="password"
                     required
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Nhập lại mật khẩu"
                   />
@@ -111,11 +210,17 @@ export default function LoginPage() {
                     type="checkbox"
                     className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="remember" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                  <label
+                    htmlFor="remember"
+                    className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+                  >
                     Ghi nhớ đăng nhập
                   </label>
                 </div>
-                <Link href="/forgot-password" className="text-sm text-purple-600 dark:text-purple-400 hover:underline">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                >
                   Quên mật khẩu?
                 </Link>
               </div>
@@ -130,13 +235,22 @@ export default function LoginPage() {
                   required
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
-                <label htmlFor="terms" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="terms"
+                  className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+                >
                   Tôi đồng ý với{" "}
-                  <Link href="/terms" className="text-purple-600 dark:text-purple-400 hover:underline">
+                  <Link
+                    href="/terms"
+                    className="text-purple-600 dark:text-purple-400 hover:underline"
+                  >
                     Điều khoản sử dụng
                   </Link>{" "}
                   và{" "}
-                  <Link href="/privacy" className="text-purple-600 dark:text-purple-400 hover:underline">
+                  <Link
+                    href="/privacy"
+                    className="text-purple-600 dark:text-purple-400 hover:underline"
+                  >
                     Chính sách bảo mật
                   </Link>
                 </label>
@@ -145,9 +259,19 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              disabled={isLoading}
+              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center"
             >
-              {isLogin ? "Đăng nhập" : "Đăng ký"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  {isLogin ? "Đang đăng nhập..." : "Đang đăng ký..."}
+                </>
+              ) : isLogin ? (
+                "Đăng nhập"
+              ) : (
+                "Đăng ký"
+              )}
             </button>
           </form>
 
@@ -157,7 +281,9 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Hoặc</span>
+                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                  Hoặc
+                </span>
               </div>
             </div>
 
@@ -185,7 +311,11 @@ export default function LoginPage() {
               </button>
 
               <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
                 <span className="ml-2">Facebook</span>
@@ -207,5 +337,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
