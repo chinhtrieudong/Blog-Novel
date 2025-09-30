@@ -1,10 +1,24 @@
-import Link from "next/link"
-import { Star, BookOpen, Users, Heart, Share2, MessageCircle, ChevronRight, Calendar, Eye } from "lucide-react"
-import { getNovelById, getChaptersByNovelId } from "@/lib/novel-data"
+import Link from "next/link";
+import {
+  Star,
+  BookOpen,
+  Users,
+  Heart,
+  Share2,
+  MessageCircle,
+  ChevronRight,
+  Calendar,
+  Eye,
+} from "lucide-react";
+import { getNovelById, getChaptersByNovelId } from "@/lib/novel-data";
 
-export default function NovelDetailPage({ params }: { params: { id: string } }) {
-  const novel = getNovelById(parseInt(params.id))
-  
+export default async function NovelDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const novel = getNovelById(parseInt((await params).id));
+
   if (!novel) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -20,12 +34,10 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
-  const chapters = getChaptersByNovelId(novel.id)
-
-
+  const chapters = getChaptersByNovelId(novel.id);
 
   const comments = [
     {
@@ -78,14 +90,17 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
       likes: 21,
       replies: 4,
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-8">
-          <Link href="/novels" className="hover:text-purple-600 dark:hover:text-purple-400">
+          <Link
+            href="/novels"
+            className="hover:text-purple-600 dark:hover:text-purple-400"
+          >
             Tiểu thuyết
           </Link>
           <span>/</span>
@@ -108,7 +123,9 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
 
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{novel.title}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {novel.title}
+                    </h1>
                     <div className="flex items-center space-x-2">
                       <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
                         <Heart className="w-5 h-5" />
@@ -120,14 +137,21 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                   </div>
 
                   <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-                    Tác giả: <span className="text-gray-900 dark:text-white font-medium">{novel.author}</span>
+                    Tác giả:{" "}
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {novel.author}
+                    </span>
                   </p>
 
                   <div className="flex flex-wrap gap-4 mb-6">
                     <div className="flex items-center">
                       <Star className="w-5 h-5 text-yellow-400 mr-1" />
-                      <span className="text-gray-900 dark:text-white font-medium">{novel.rating}</span>
-                      <span className="text-gray-600 dark:text-gray-400 ml-1">({novel.reviews} đánh giá)</span>
+                      <span className="text-gray-900 dark:text-white font-medium">
+                        {novel.rating}
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400 ml-1">
+                        ({novel.reviews} đánh giá)
+                      </span>
                     </div>
                     <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <BookOpen className="w-5 h-5 mr-1" />
@@ -156,7 +180,9 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
                       {novel.genre}
                     </span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Cập nhật: {novel.lastUpdate}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Cập nhật: {novel.lastUpdate}
+                    </span>
                   </div>
 
                   <div className="flex flex-wrap gap-2 mb-6">
@@ -190,14 +216,20 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
 
             {/* Description */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Tóm tắt</h2>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{novel.description}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Tóm tắt
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                {novel.description}
+              </p>
             </div>
 
             {/* Chapters List */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Danh sách chương ({novel.chapters})</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Danh sách chương ({novel.chapters})
+                </h2>
                 <div className="flex items-center space-x-2">
                   <button className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
                     Mới nhất
@@ -273,10 +305,16 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
                     <div className="flex-1">
                       <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-gray-900 dark:text-white">{comment.user}</span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">{comment.time}</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {comment.user}
+                          </span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {comment.time}
+                          </span>
                         </div>
-                        <p className="text-gray-700 dark:text-gray-300">{comment.comment}</p>
+                        <p className="text-gray-700 dark:text-gray-300">
+                          {comment.comment}
+                        </p>
                       </div>
                       <div className="flex items-center mt-2 space-x-4">
                         <button className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400">
@@ -298,16 +336,27 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
           <div className="lg:col-span-1">
             {/* Author Info */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Thông tin tác giả</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Thông tin tác giả
+              </h3>
               <div className="flex items-center space-x-3 mb-4">
-                <img src="/placeholder.svg?height=60&width=60" alt="Tác giả" className="w-15 h-15 rounded-full" />
+                <img
+                  src="/placeholder.svg?height=60&width=60"
+                  alt="Tác giả"
+                  className="w-15 h-15 rounded-full"
+                />
                 <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white">{novel.author}</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Tác giả</p>
+                  <h4 className="font-medium text-gray-900 dark:text-white">
+                    {novel.author}
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Tác giả
+                  </p>
                 </div>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                Tác giả với nhiều năm kinh nghiệm viết truyện, chuyên về thể loại fantasy và phiêu lưu.
+                Tác giả với nhiều năm kinh nghiệm viết truyện, chuyên về thể
+                loại fantasy và phiêu lưu.
               </p>
               <button className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
                 Theo dõi tác giả
@@ -316,7 +365,9 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
 
             {/* Related Novels */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Truyện liên quan</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Truyện liên quan
+              </h3>
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
                   <Link
@@ -346,5 +397,5 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
         </div>
       </div>
     </div>
-  )
+  );
 }

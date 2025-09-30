@@ -31,15 +31,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        const response = await apiClient.getProfile();
-        setUser(response.data);
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+          const response = await apiClient.getProfile();
+          setUser(response.data);
+        }
       }
     } catch (error) {
       console.error("Failed to check auth status:", error);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+      }
     } finally {
       setIsLoading(false);
     }

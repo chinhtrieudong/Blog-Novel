@@ -7,7 +7,7 @@ import apiClient from "@/lib/api-client";
 import { PostResponse, CategoryResponse, PostQueryParams } from "@/types/api";
 
 export default function BlogPage() {
-  const [posts, setPosts] = useState<PostResponse[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,44 +16,76 @@ export default function BlogPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const categoryNames = [
-    "Tất cả",
-    "Công nghệ",
-    "Đời sống",
-    "Du lịch",
-    "Sách",
-    "Phim ảnh",
-    "Ẩm thực",
-    "Sức khỏe",
-  ];
+  const [categoryNames, setCategoryNames] = useState<string[]>(["Tất cả"]);
+  const [categoryMapping, setCategoryMapping] = useState<{
+    [key: string]: number;
+  }>({});
 
   useEffect(() => {
     fetchPosts();
+    fetchCategories();
   }, [currentPage, selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/categories");
+      if (response.ok) {
+        const data = await response.json();
+        const categoryNamesList = data.data.map((cat: any) => cat.name);
+
+        const mapping: { [key: string]: number } = {};
+        data.data.forEach((cat: any) => {
+          mapping[cat.name] = cat.id;
+        });
+        setCategoryMapping(mapping);
+
+        setCategoryNames(["Tất cả", ...categoryNamesList]);
+      } else {
+        throw new Error("Categories API not available");
+      }
+    } catch (err) {
+      setCategoryNames([
+        "Tất cả",
+        "Công nghệ",
+        "Đời sống",
+        "Du lịch",
+        "Sách",
+        "Phim ảnh",
+        "Ẩm thực",
+        "Sức khỏe",
+      ]);
+
+      setCategoryMapping({
+        "Công nghệ": 1,
+        "Đời sống": 2,
+        "Du lịch": 3,
+        Sách: 4,
+        "Phim ảnh": 5,
+        "Ẩm thực": 6,
+        "Sức khỏe": 7,
+      });
+    }
+  };
 
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
       const params: PostQueryParams = {
-        page: currentPage - 1, // API uses 0-based pagination
-        size: 12,
+        page: currentPage - 1,
+        size: 10,
       };
 
       if (selectedCategory && selectedCategory !== "Tất cả") {
-        // Find category ID by name
-        const categoryId = categories.find(
-          (cat) => cat.name === selectedCategory
-        )?.id;
+        const categoryId = categoryMapping[selectedCategory];
         if (categoryId) {
           params.categoryId = categoryId;
         }
       }
 
       const response = await apiClient.getPosts(params);
-      setPosts(response.data.content);
-      setTotalPages(response.data.totalPages);
+      setPosts(response.data.content || []);
+      setTotalPages(response.data.totalPages || 1);
     } catch (err) {
-      console.error("Failed to fetch posts:", err);
       setError("Không thể tải bài viết. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
@@ -71,12 +103,27 @@ export default function BlogPage() {
       const response = await apiClient.searchPosts({
         q: searchQuery,
         page: 0,
-        size: 12,
+        size: 10,
       });
-      setPosts(response.data.content);
-      setTotalPages(response.data.totalPages);
+
+      const searchResults = response.data.content || [];
+      const formattedResults = searchResults.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        content: item.excerpt || "Nội dung không có sẵn",
+        excerpt: item.excerpt,
+        coverImageUrl: item.coverImage,
+        author: { fullName: item.authorName, username: item.authorName },
+        categories: [],
+        views: 0,
+        createdAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
+        status: "published",
+      }));
+
+      setPosts(formattedResults);
+      setTotalPages(response.data.totalPages || 1);
     } catch (err) {
-      console.error("Search failed:", err);
       setError("Không thể tìm kiếm bài viết.");
     } finally {
       setIsLoading(false);
@@ -96,6 +143,10 @@ export default function BlogPage() {
     const wordCount = content.split(/\s+/).length;
     const readTime = Math.ceil(wordCount / wordsPerMinute);
     return `${readTime} phút đọc`;
+  };
+
+  const stripHtmlTags = (html: string) => {
+    return html.replace(/<[^>]*>/g, "");
   };
 
   return (
@@ -120,9 +171,18 @@ export default function BlogPage() {
               <input
                 type="text"
                 placeholder="Tìm kiếm bài viết..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+            <button
+              onClick={handleSearch}
+              className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Tìm kiếm
+            </button>
             <button className="flex items-center px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
               <Filter className="w-5 h-5 mr-2" />
               Bộ lọc
@@ -180,7 +240,11 @@ export default function BlogPage() {
               >
                 <div className="aspect-video bg-gray-200 dark:bg-gray-700">
                   <img
-                    src={post.coverImageUrl || "/placeholder.svg"}
+                    src={
+                      post.coverImageUrl ||
+                      post.coverImage ||
+                      "/placeholder.svg"
+                    }
                     alt={post.title}
                     className="w-full h-full object-cover"
                   />
@@ -190,12 +254,12 @@ export default function BlogPage() {
                   <div className="flex items-center justify-between mb-3">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                       <Tag className="w-3 h-3 mr-1" />
-                      {post.categories.length > 0
+                      {post.categories?.length > 0
                         ? post.categories[0].name
                         : "Chưa phân loại"}
                     </span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {calculateReadTime(post.content)}
+                      {post.content ? calculateReadTime(post.content) : "N/A"}
                     </span>
                   </div>
 
@@ -204,17 +268,27 @@ export default function BlogPage() {
                   </h2>
 
                   <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
-                    {post.excerpt || post.content.substring(0, 150) + "..."}
+                    {post.excerpt ||
+                      (post.content
+                        ? stripHtmlTags(post.content).substring(0, 150) + "..."
+                        : "Nội dung không có sẵn")}
                   </p>
 
                   <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
-                      <span>{formatDate(post.createdAt)}</span>
+                      <span>
+                        {post.publishedAt
+                          ? formatDate(post.publishedAt)
+                          : "N/A"}
+                      </span>
                     </div>
                     <div className="flex items-center">
                       <Eye className="w-4 h-4 mr-1" />
-                      <span>{post.views.toLocaleString()} lượt xem</span>
+                      <span>
+                        {post.views ? post.views.toLocaleString() : "0"} lượt
+                        xem
+                      </span>
                     </div>
                   </div>
 
@@ -236,6 +310,12 @@ export default function BlogPage() {
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               Không có bài viết nào để hiển thị.
             </p>
+            <button
+              onClick={fetchPosts}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Tải lại dữ liệu
+            </button>
           </div>
         )}
 

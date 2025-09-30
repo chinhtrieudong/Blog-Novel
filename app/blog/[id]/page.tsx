@@ -17,8 +17,12 @@ import {
   getRelatedPosts,
 } from "@/lib/data";
 
-export default function BlogDetailPage({ params }: { params: { id: string } }) {
-  const post = getBlogPostById(parseInt(params.id));
+export default async function BlogDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const post = getBlogPostById(parseInt((await params).id));
 
   if (!post) {
     notFound();

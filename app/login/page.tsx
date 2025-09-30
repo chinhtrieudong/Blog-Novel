@@ -23,6 +23,7 @@ export default function LoginPage() {
     password: "",
     confirmPassword: "",
     fullName: "",
+    loginIdentifier: "", // Can be either username or email
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,25 +40,72 @@ export default function LoginPage() {
     }));
   };
 
+  const validateForm = () => {
+    if (isLogin) {
+      if (!formData.loginIdentifier.trim()) {
+        setError("Tên đăng nhập hoặc email là bắt buộc");
+        return false;
+      }
+      if (formData.loginIdentifier.trim().length < 3) {
+        setError("Tên đăng nhập hoặc email phải có ít nhất 3 ký tự");
+        return false;
+      }
+      if (formData.loginIdentifier.trim().length > 100) {
+        setError("Tên đăng nhập hoặc email không được vượt quá 100 ký tự");
+        return false;
+      }
+    } else {
+      // Register validation
+      if (!formData.username.trim()) {
+        setError("Tên đăng nhập là bắt buộc");
+        return false;
+      }
+      if (formData.username.trim().length < 3) {
+        setError("Tên đăng nhập phải có ít nhất 3 ký tự");
+        return false;
+      }
+      if (formData.username.trim().length > 50) {
+        setError("Tên đăng nhập không được vượt quá 50 ký tự");
+        return false;
+      }
+      if (!formData.email.trim()) {
+        setError("Email là bắt buộc");
+        return false;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError("Mật khẩu xác nhận không khớp");
+        return false;
+      }
+    }
+
+    if (!formData.password) {
+      setError("Mật khẩu là bắt buộc");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       if (isLogin) {
-        // Login
-        await login(formData.username, formData.password);
+        // Login - use loginIdentifier which can be either username or email
+        await login(formData.loginIdentifier.trim(), formData.password);
         router.push("/");
       } else {
         // Register
-        if (formData.password !== formData.confirmPassword) {
-          throw new Error("Mật khẩu xác nhận không khớp");
-        }
-
         await register({
-          username: formData.username,
-          email: formData.email,
+          username: formData.username.trim(),
+          email: formData.email.trim(),
           password: formData.password,
         });
         router.push("/");
@@ -98,6 +146,30 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {isLogin && (
+              <div>
+                <label
+                  htmlFor="loginIdentifier"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Tên đăng nhập hoặc Email
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    id="loginIdentifier"
+                    name="loginIdentifier"
+                    type="text"
+                    required
+                    value={formData.loginIdentifier}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Nhập tên đăng nhập hoặc email"
+                  />
+                </div>
+              </div>
+            )}
+
             {!isLogin && (
               <div>
                 <label
@@ -122,27 +194,29 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Nhập địa chỉ email"
-                />
+            {!isLogin && (
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Nhập địa chỉ email"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label

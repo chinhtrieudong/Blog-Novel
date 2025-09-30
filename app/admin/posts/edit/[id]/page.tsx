@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import apiClient from "@/lib/api-client";
-import { PostResponse, PostRequest, CategoryResponse } from "@/types/api";
+import { PostResponse, PostRequest } from "@/types/api";
 
 export default function EditPostPage({ params }: { params: { id: string } }) {
   const [post, setPost] = useState<PostResponse | null>(null);
@@ -24,25 +24,43 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [status, setStatus] = useState("DRAFT");
-  const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unauthorized, setUnauthorized] = useState(false);
   const editorRef = useRef<any>(null);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
+  // Mock categories for now - in real app this would come from API
+  const categories = [
+    { id: 1, name: "Công nghệ" },
+    { id: 2, name: "Đời sống" },
+    { id: 3, name: "Sách" },
+    { id: 4, name: "Ẩm thực" },
+    { id: 5, name: "Du lịch" },
+    { id: 6, name: "Phim ảnh" },
+  ];
 
   const { id } = params;
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        // Fetch post data and categories
-        const [postResponse] = await Promise.all([
-          apiClient.getPostById(parseInt(id)),
-        ]);
+      if (!isAuthenticated || !user) {
+        router.push("/login");
+        return;
+      }
 
+      try {
+        const postResponse = await apiClient.getPostById(parseInt(id));
         const postData = postResponse.data;
+
+        // Check if user owns this post or is admin
+        if (postData.author.id !== user.id && user.role !== "ADMIN") {
+          setUnauthorized(true);
+          return;
+        }
+
         setPost(postData);
         setTitle(postData.title);
         setSelectedCategories(postData.categories.map((cat) => cat.id));
@@ -58,7 +76,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
     }
 
     fetchData();
-  }, [id]);
+  }, [id, user, isAuthenticated, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

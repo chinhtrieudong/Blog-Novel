@@ -4,15 +4,20 @@ import { useState, useRef } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import { ChevronLeft, Save, Send } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 export default function NewPostPage() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [excerpt, setExcerpt] = useState("");
-  const [featuredImage, setFeaturedImage] = useState("");
+  const [featuredImage, setFeaturedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [status, setStatus] = useState("draft");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const editorRef = useRef<any>(null);
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const categories = [
     "Công nghệ",
@@ -23,34 +28,65 @@ export default function NewPostPage() {
     "Phim ảnh",
   ];
 
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    router.push("/login");
+    return null;
+  }
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setFeaturedImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
-        setFeaturedImage(file.name);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const content = editorRef.current?.getContent();
+    if (!user) return;
 
-    const postData = {
-      title,
-      category,
-      excerpt,
-      content,
-      featuredImage,
-      status,
-      createdAt: new Date().toISOString(),
-    };
+    setIsSubmitting(true);
+    try {
+      const content = editorRef.current?.getContent();
 
-    console.log("Post data:", postData);
-    // TODO: Implement API call to save post
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+      formData.append("status", status);
+      if (excerpt) formData.append("excerpt", excerpt);
+      if (category) formData.append("categoryIds", category);
+      if (featuredImage) formData.append("coverImage", featuredImage);
+
+      // TODO: Implement API call to create post
+      console.log("Creating post:", {
+        title,
+        content,
+        excerpt,
+        category,
+        status,
+        authorId: user.id,
+      });
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Redirect based on user role
+      if (user.role === "ADMIN") {
+        router.push("/admin/posts");
+      } else {
+        router.push("/blog");
+      }
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert("Có lỗi xảy ra khi tạo bài viết. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

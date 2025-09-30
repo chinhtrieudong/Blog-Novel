@@ -4,55 +4,83 @@ import { useState, useRef } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import { ChevronLeft, Save, Send } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 export default function NewNovelPage() {
   const [novelTitle, setNovelTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
-  const [coverImage, setCoverImage] = useState("");
+  const [coverImage, setCoverImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [status, setStatus] = useState("draft");
   const [synopsis, setSynopsis] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const editorRef = useRef<any>(null);
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
 
-  const genres = [
-    "Fantasy",
-    "Sci-Fi",
-    "Romance",
-    "Thriller",
-    "Mystery",
-    "Historical Fiction",
-  ];
+  const [genres, setGenres] = useState<
+    { id: number; name: string; description?: string }[]
+  >([]);
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    router.push("/login");
+    return null;
+  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
-        setCoverImage(file.name);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const content = editorRef.current?.getContent();
+    if (!user) return;
 
-    const novelData = {
-      novelTitle,
-      author,
-      genre,
-      synopsis,
-      content,
-      coverImage,
-      status,
-      createdAt: new Date().toISOString(),
-    };
+    setIsSubmitting(true);
+    try {
+      const content = editorRef.current?.getContent();
 
-    console.log("Novel data:", novelData);
-    // TODO: Implement API call to save novel
+      const formData = new FormData();
+      formData.append("title", novelTitle);
+      formData.append("description", synopsis);
+      formData.append("status", status);
+      if (genre) formData.append("genreIds", genre);
+      if (coverImage) formData.append("coverImage", coverImage);
+
+      // TODO: Implement API call to create novel
+      console.log("Creating novel:", {
+        title: novelTitle,
+        description: synopsis,
+        genre,
+        status,
+        authorId: user.id,
+      });
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Redirect based on user role
+      if (user.role === "ADMIN") {
+        router.push("/admin/novels");
+      } else {
+        router.push("/novels");
+      }
+    } catch (error) {
+      console.error("Error creating novel:", error);
+      alert("Có lỗi xảy ra khi tạo tiểu thuyết. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -132,8 +160,8 @@ export default function NewNovelPage() {
               >
                 <option value="">Chọn thể loại</option>
                 {genres.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
+                  <option key={g.id} value={g.id}>
+                    {g.name}
                   </option>
                 ))}
               </select>

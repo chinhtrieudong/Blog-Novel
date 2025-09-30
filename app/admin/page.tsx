@@ -14,6 +14,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 import {
   DeleteConfirmationModal,
   UserViewModal,
@@ -21,6 +22,7 @@ import {
 } from "@/components/admin/modals";
 
 export default function AdminPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -173,10 +175,14 @@ export default function AdminPage() {
   ];
 
   const tabs = [
-    { id: "dashboard", name: "Tổng quan", icon: BarChart3 },
+    ...(user?.role === "ADMIN"
+      ? [{ id: "dashboard", name: "Tổng quan", icon: BarChart3 }]
+      : []),
     { id: "posts", name: "Quản lý Blog", icon: PenTool },
     { id: "novels", name: "Quản lý Tiểu thuyết", icon: BookOpen },
-    { id: "users", name: "Người dùng", icon: Users },
+    ...(user?.role === "ADMIN"
+      ? [{ id: "users", name: "Người dùng", icon: Users }]
+      : []),
   ];
 
   const handleDeleteClick = (id: number, type: string, title: string) => {

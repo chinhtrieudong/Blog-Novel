@@ -22,15 +22,16 @@ import {
   chapterComments,
 } from "@/lib/novel-data";
 
-export default function ChapterDetailPage({
+export default async function ChapterDetailPage({
   params,
 }: {
   params: { id: string; chapterId: string };
 }) {
-  const novel = getNovelById(parseInt(params.id));
+  const resolvedParams = await params;
+  const novel = getNovelById(parseInt(resolvedParams.id));
   const chapter = getChapterById(
-    parseInt(params.chapterId),
-    parseInt(params.id)
+    parseInt(resolvedParams.chapterId),
+    parseInt(resolvedParams.id)
   );
 
   if (!novel || !chapter) {
@@ -38,12 +39,12 @@ export default function ChapterDetailPage({
   }
 
   const prevChapter = getPrevChapter(
-    parseInt(params.chapterId),
-    parseInt(params.id)
+    parseInt(resolvedParams.chapterId),
+    parseInt(resolvedParams.id)
   );
   const nextChapter = getNextChapter(
-    parseInt(params.chapterId),
-    parseInt(params.id)
+    parseInt(resolvedParams.chapterId),
+    parseInt(resolvedParams.id)
   );
 
   return (

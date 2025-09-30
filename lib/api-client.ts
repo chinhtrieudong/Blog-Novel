@@ -28,18 +28,19 @@ import {
   SearchParams,
   TokenResponse,
   GenreResponse,
+  PaginationParams,
 } from "@/types/api";
 
 // Base API configuration
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
 
   constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL;
+    this.baseURL = API_BASE_URL || "http://localhost:8080/api";
     this.loadToken();
   }
 
@@ -72,6 +73,7 @@ class ApiClient {
     const config: RequestInit = {
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
         ...options.headers,
       },
       ...options,
@@ -85,11 +87,28 @@ class ApiClient {
     }
 
     try {
+      console.log("Making API request to:", url);
+      console.log("Request headers:", config.headers);
+      console.log("Request method:", config.method || "GET");
+
       const response = await fetch(url, config);
-      const data = await response.json();
+      console.log("Response status:", response.status);
+
+      // Check if response has content
+      const contentType = response.headers.get("content-type");
+      let data: any = null;
+
+      if (contentType && contentType.includes("application/json")) {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        }
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || "API request failed");
+        const errorMessage =
+          data?.message || `API request failed with status ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       return data;
@@ -119,10 +138,23 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+
+      // Check if response has content
+      const contentType = response.headers.get("content-type");
+      let data: any = null;
+
+      if (contentType && contentType.includes("application/json")) {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        }
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || "Upload request failed");
+        const errorMessage =
+          data?.message ||
+          `Upload request failed with status ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       return data;
@@ -226,6 +258,20 @@ class ApiClient {
     const query = searchParams.toString();
     return this.request<PagedResponse<NovelResponse>>(
       `/novels${query ? `?${query}` : ""}`
+    );
+  }
+
+  async getNovelsByUser(
+    userId: number,
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<NovelResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    return this.request<PagedResponse<NovelResponse>>(
+      `/novels/user/${userId}${query ? `?${query}` : ""}`
     );
   }
 
@@ -385,6 +431,20 @@ class ApiClient {
     const query = searchParams.toString();
     return this.request<PagedResponse<PostResponse>>(
       `/posts${query ? `?${query}` : ""}`
+    );
+  }
+
+  async getPostsByUser(
+    userId: number,
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<PostResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    return this.request<PagedResponse<PostResponse>>(
+      `/posts/user/${userId}${query ? `?${query}` : ""}`
     );
   }
 

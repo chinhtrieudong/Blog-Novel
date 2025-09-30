@@ -1,170 +1,183 @@
-import Link from "next/link"
-import { Star, BookOpen, Users, Search, Filter, TrendingUp } from "lucide-react"
+"use client";
+
+import Link from "next/link";
+import {
+  Star,
+  BookOpen,
+  Users,
+  Search,
+  Filter,
+  TrendingUp,
+  Loader2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import apiClient from "@/lib/api-client";
+import { NovelResponse, PagedResponse, NovelStatus } from "@/types/api";
 
 export default function NovelsPage() {
-  const genres = ["Tất cả", "Lãng mạn", "Hành động", "Trinh thám", "Khoa học viễn tưởng", "Fantasy", "Kinh dị"]
-  const sortOptions = ["Mới nhất", "Phổ biến", "Đánh giá cao", "Hoàn thành"]
+  const [novels, setNovels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("Tất cả");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [genres, setGenres] = useState<
+    { id: number; name: string; description?: string }[]
+  >([]);
+  const sortOptions = ["Mới nhất", "Phổ biến", "Đánh giá cao", "Hoàn thành"];
+
+  useEffect(() => {
+    fetchGenres();
+    fetchNovels();
+  }, []);
+
+  const fetchGenres = async () => {
+    try {
+      const response = await apiClient.getGenres();
+      const genreObjects = response.data.map((genre: any) => ({
+        id: genre.id,
+        name: genre.name,
+        description: genre.description,
+      }));
+      setGenres([{ id: 0, name: "Tất cả" }, ...genreObjects]);
+    } catch (error) {
+      console.error("Failed to fetch genres:", error);
+      // Keep default genres if API fails
+      setGenres([
+        { id: 0, name: "Tất cả" },
+        { id: 1, name: "Lãng mạn" },
+        { id: 2, name: "Hành động" },
+        { id: 3, name: "Trinh thám" },
+        { id: 4, name: "Khoa học viễn tưởng" },
+        { id: 5, name: "Fantasy" },
+        { id: 6, name: "Kinh dị" },
+      ]);
+    }
+  };
+
+  const fetchNovels = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.getNovels({ page: 0, size: 10 });
+      setNovels(response.data.content || []);
+    } catch (error) {
+      console.error("Failed to fetch novels:", error);
+      setError("Không thể tải danh sách tiểu thuyết");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      fetchNovels();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await apiClient.searchNovels({
+        q: searchQuery,
+        page: 0,
+        size: 10,
+      });
+
+      // Search results have different structure - convert to display format
+      const searchResults = response.data.content || [];
+      const formattedResults = searchResults.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        author: { fullName: item.authorName, username: item.authorName },
+        genres: [], // Not available in search results
+        status: "ONGOING", // Default status
+        coverImage: item.coverImage,
+        viewCount: 0, // Not available in search results
+        avgRating: item.avgRating || 0,
+        totalChapters: 0, // Not available in search results
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+
+      setNovels(formattedResults);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setError("Không thể tìm kiếm tiểu thuyết.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenreFilter = (genre: string) => {
+    setSelectedGenre(genre);
+    setSearchQuery(""); // Clear search when filtering by genre
+    fetchNovels(); // Refetch all novels and filter client-side
+  };
+
+  // Filter novels by selected genre (client-side filtering)
+  const displayedNovels =
+    selectedGenre === "Tất cả"
+      ? novels
+      : novels.filter((novel) =>
+          novel.genres?.some((g: any) => g.name === selectedGenre)
+        );
 
   const stats = {
-    totalNovels: 156,
-    completedNovels: 23,
-    ongoingNovels: 133,
-    totalViews: 1200000,
-  }
-
-  const novels = [
-    {
-      id: 1,
-      title: "Hành Trình Đến Với Ánh Sáng",
-      author: "Nguyễn Minh Tâm",
-      description:
-        "Câu chuyện về một chàng trai trẻ tên Minh khám phá thế giới ma thuật đầy bí ẩn. Từ một người bình thường, anh dần khám phá ra những sức mạnh tiềm ẩn trong mình và bắt đầu hành trình tìm kiếm ánh sáng để cứu rỗi thế giới khỏi bóng tối.",
-      genre: "Fantasy",
-      chapters: 45,
-      status: "Đang cập nhật",
-      rating: 4.8,
-      reviews: 1256,
-      views: 25420,
-      lastUpdate: "2 giờ trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-    {
-      id: 2,
-      title: "Tình Yêu Trong Mưa Thu",
-      author: "Lê Hương Giang",
-      description:
-        "Một câu chuyện tình lãng mạn diễn ra trong khung cảnh mùa thu thơ mộng với những cung bậc cảm xúc sâu lắng. Hai trái tim tìm thấy nhau giữa những giọt mưa thu và lá vàng rơi.",
-      genre: "Lãng mạn",
-      chapters: 32,
-      status: "Hoàn thành",
-      rating: 4.6,
-      reviews: 987,
-      views: 18350,
-      lastUpdate: "1 ngày trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-    {
-      id: 3,
-      title: "Thám Tử Thành Phố",
-      author: "Trần Đức Minh",
-      description:
-        "Những vụ án bí ẩn trong thành phố lớn được giải quyết bởi một thám tử tài ba với trí thông minh phi thường. Mỗi vụ án là một câu đố logic đầy thử thách.",
-      genre: "Trinh thám",
-      chapters: 28,
-      status: "Đang cập nhật",
-      rating: 4.7,
-      reviews: 756,
-      views: 15876,
-      lastUpdate: "5 giờ trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-    {
-      id: 4,
-      title: "Chiến Binh Không Gian",
-      author: "Phạm Quang Huy",
-      description:
-        "Cuộc chiến giữa các hành tinh trong tương lai xa với công nghệ tiên tiến và những trận đánh hoành tráng. Nhân loại phải đối mặt với những thử thách sinh tồn trong vũ trụ bao la.",
-      genre: "Khoa học viễn tưởng",
-      chapters: 67,
-      status: "Đang cập nhật",
-      rating: 4.9,
-      reviews: 2156,
-      views: 34560,
-      lastUpdate: "1 giờ trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-    {
-      id: 5,
-      title: "Bóng Đêm Kinh Hoàng",
-      author: "Vũ Thị Mai",
-      description:
-        "Những câu chuyện kinh dị đan xen trong đêm tối với những bí ẩn không thể giải thích được. Sự thật đáng sợ ẩn giấu sau những hiện tượng siêu nhiên.",
-      genre: "Kinh dị",
-      chapters: 23,
-      status: "Đang cập nhật",
-      rating: 4.4,
-      reviews: 543,
-      views: 12890,
-      lastUpdate: "3 giờ trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-    {
-      id: 6,
-      title: "Võ Lâm Truyền Kỳ",
-      author: "Hoàng Văn Long",
-      description:
-        "Thế giới võ lâm với những cao thủ tuyệt đỉnh và những cuộc tranh đấu gay cấn để tranh giành bí kíp. Nghĩa khí giang hồ và tình bạn thủy chung trong thế giới kiếm hiệp.",
-      genre: "Hành động",
-      chapters: 89,
-      status: "Hoàn thành",
-      rating: 4.5,
-      reviews: 1876,
-      views: 45670,
-      lastUpdate: "1 tuần trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-    {
-      id: 7,
-      title: "Học Viện Ma Pháp",
-      author: "Đỗ Minh Châu",
-      description:
-        "Cuộc sống tại học viện ma pháp danh tiếng với những bài học thú vị và những cuộc phiêu lưu đầy nguy hiểm. Tình bạn và sự trưởng thành của những pháp sư trẻ tuổi.",
-      genre: "Fantasy",
-      chapters: 56,
-      status: "Đang cập nhật",
-      rating: 4.7,
-      reviews: 1432,
-      views: 28900,
-      lastUpdate: "4 giờ trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-    {
-      id: 8,
-      title: "Công Chúa Băng Giá",
-      author: "Lý Thanh Hương",
-      description:
-        "Câu chuyện về một công chúa với sức mạnh băng giá cố gắng tìm lại vương quốc đã mất. Hành trình đầy gian khó để khôi phục hòa bình cho đất nước.",
-      genre: "Fantasy",
-      chapters: 41,
-      status: "Đang cập nhật",
-      rating: 4.6,
-      reviews: 1098,
-      views: 22340,
-      lastUpdate: "6 giờ trước",
-      cover: "/placeholder.svg?height=300&width=200",
-    },
-  ]
+    totalNovels: displayedNovels.length,
+    completedNovels: displayedNovels.filter((n) => n.status === "COMPLETED")
+      .length,
+    ongoingNovels: displayedNovels.filter((n) => n.status === "ONGOING").length,
+    totalViews: displayedNovels.reduce((sum, n) => sum + (n.viewCount || 0), 0),
+  };
 
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Thư Viện Tiểu Thuyết</h1>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Thư Viện Tiểu Thuyết
+          </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Khám phá những tác phẩm tiểu thuyết hấp dẫn với nhiều thể loại đa dạng
+            Khám phá những tác phẩm tiểu thuyết hấp dẫn với nhiều thể loại đa
+            dạng
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalNovels}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Tổng tiểu thuyết</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {stats.totalNovels}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Tổng tiểu thuyết
+            </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completedNovels}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Hoàn thành</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {stats.completedNovels}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Hoàn thành
+            </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.ongoingNovels}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Đang cập nhật</div>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {stats.ongoingNovels}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Đang cập nhật
+            </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {(stats.totalViews / 1000000).toFixed(1)}M
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Lượt đọc</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Lượt đọc
+            </div>
           </div>
         </div>
 
@@ -176,9 +189,18 @@ export default function NovelsPage() {
               <input
                 type="text"
                 placeholder="Tìm kiếm tiểu thuyết..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
+            <button
+              onClick={handleSearch}
+              className="px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Tìm kiếm
+            </button>
             <select className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500">
               {sortOptions.map((option) => (
                 <option key={option} value={option}>
@@ -196,14 +218,15 @@ export default function NovelsPage() {
           <div className="flex flex-wrap gap-2">
             {genres.map((genre) => (
               <button
-                key={genre}
+                key={genre.id}
+                onClick={() => handleGenreFilter(genre.name)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  genre === "Tất cả"
+                  selectedGenre === genre.name
                     ? "bg-purple-600 text-white"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
               >
-                {genre}
+                {genre.name}
               </button>
             ))}
           </div>
@@ -211,7 +234,7 @@ export default function NovelsPage() {
 
         {/* Novels Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {novels.map((novel) => (
+          {displayedNovels.map((novel) => (
             <div
               key={novel.id}
               className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
@@ -219,7 +242,7 @@ export default function NovelsPage() {
               <div className="flex">
                 <div className="w-32 h-48 flex-shrink-0">
                   <img
-                    src={novel.cover || "/placeholder.svg"}
+                    src={novel.coverImage || "/placeholder.svg"}
                     alt={novel.title}
                     className="w-full h-full object-cover"
                   />
@@ -229,44 +252,54 @@ export default function NovelsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        novel.status === "Hoàn thành"
+                        novel.status === "COMPLETED"
                           ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
                           : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
                       }`}
                     >
-                      {novel.status}
+                      {novel.status === "COMPLETED"
+                        ? "Hoàn thành"
+                        : novel.status === "ONGOING"
+                        ? "Đang cập nhật"
+                        : novel.status === "DRAFT"
+                        ? "Nháp"
+                        : novel.status}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{novel.lastUpdate}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Cập nhật gần đây
+                    </span>
                   </div>
 
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
                     {novel.title}
                   </h3>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{novel.author}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    {novel.author.fullName || novel.author.username}
+                  </p>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">{novel.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                    {novel.description}
+                  </p>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
                     <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
-                      {novel.genre}
+                      {novel.genres[0]?.name || "Chưa phân loại"}
                     </span>
                     <div className="flex items-center">
                       <BookOpen className="w-3 h-3 mr-1" />
-                      <span>{novel.chapters} chương</span>
+                      <span>Chưa có chương</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
                     <div className="flex items-center">
                       <Star className="w-3 h-3 mr-1 text-yellow-400" />
-                      <span>
-                        {novel.rating} ({novel.reviews})
-                      </span>
+                      <span>{novel.avgRating || 0} (Chưa có đánh giá)</span>
                     </div>
                     <div className="flex items-center">
                       <Users className="w-3 h-3 mr-1" />
-                      <span>{novel.views.toLocaleString()}</span>
+                      <span>{(novel.viewCount || 0).toLocaleString()}</span>
                     </div>
                   </div>
 
@@ -286,28 +319,35 @@ export default function NovelsPage() {
         <div className="mt-16">
           <div className="flex items-center mb-8">
             <TrendingUp className="w-6 h-6 text-orange-500 mr-2" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Xu hướng tuần này</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Xu hướng tuần này
+            </h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {novels.slice(0, 4).map((novel, index) => (
-              <div key={novel.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+              <div
+                key={novel.id}
+                className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm"
+              >
                 <div className="flex items-center mb-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
                       index === 0
                         ? "bg-yellow-500"
                         : index === 1
-                          ? "bg-gray-400"
-                          : index === 2
-                            ? "bg-orange-500"
-                            : "bg-blue-500"
+                        ? "bg-gray-400"
+                        : index === 2
+                        ? "bg-orange-500"
+                        : "bg-blue-500"
                     }`}
                   >
                     {index + 1}
                   </div>
                   <div className="ml-3 flex-1">
-                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-1">{novel.title}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-1">
+                      {novel.title}
+                    </h4>
                     <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                       <Star className="w-3 h-3 mr-1 text-yellow-400" />
                       <span>{novel.rating}</span>
@@ -350,5 +390,5 @@ export default function NovelsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -3,75 +3,89 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Editor } from "@tinymce/tinymce-react";
-import { ChevronLeft, Save, Send, XCircle, Loader2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Save,
+  Send,
+  XCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import apiClient from "@/lib/api-client";
-import {
-  NovelResponse,
-  NovelRequest,
-  GenreResponse,
-  NovelStatus,
-} from "@/types/api";
+import { NovelResponse, NovelRequest } from "@/types/api";
 
 export default function EditNovelPage({ params }: { params: { id: string } }) {
   const [novel, setNovel] = useState<NovelResponse | null>(null);
   const [novelTitle, setNovelTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
-  const [coverImage, setCoverImage] = useState("");
+  const [coverImage, setCoverImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [status, setStatus] = useState("draft");
+  const [status, setStatus] = useState("DRAFT");
   const [synopsis, setSynopsis] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [unauthorized, setUnauthorized] = useState(false);
   const editorRef = useRef<any>(null);
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
 
   const { id } = params;
 
-  const genres = [
-    "Fantasy",
-    "Sci-Fi",
-    "Romance",
-    "Thriller",
-    "Mystery",
-    "Historical Fiction",
-  ];
+  const [genres, setGenres] = useState<
+    { id: number; name: string; description?: string }[]
+  >([]);
 
   useEffect(() => {
-    // Fetch novel data based on ID
-    // Replace this with your actual data fetching logic (e.g., from an API)
-    async function fetchNovel() {
-      // Simulate fetching data
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const mockNovel: Novel = {
-        id: id,
-        novelTitle: `Tiểu thuyết ${id}`,
-        author: "Tác giả ABC",
-        genre: "Fantasy",
-        synopsis: "Đây là một tiểu thuyết mẫu.",
-        content: "Nội dung tiểu thuyết mẫu.",
-        coverImage: "",
-        status: "Đang cập nhật",
-      };
-      setNovelTitle(mockNovel.novelTitle);
-      setAuthor(mockNovel.author);
-      setGenre(mockNovel.genre);
-      setSynopsis(mockNovel.synopsis);
-      setCoverImage(mockNovel.coverImage);
-      setStatus(mockNovel.status);
-      setNovel(mockNovel);
+    async function fetchData() {
+      if (!isAuthenticated || !user) {
+        router.push("/login");
+        return;
+      }
+
+      try {
+        // Fetch genres first
+        const genresResponse = await apiClient.getGenres();
+        setGenres(genresResponse.data);
+
+        // Fetch novel data
+        const novelResponse = await apiClient.getNovelById(parseInt(id));
+        const novelData = novelResponse.data;
+
+        // Check if user owns this novel or is admin
+        if (novelData.author.id !== user.id && user.role !== "ADMIN") {
+          setUnauthorized(true);
+          return;
+        }
+
+        setNovel(novelData);
+        setNovelTitle(novelData.title);
+        setAuthor(novelData.author.username);
+        setGenre(novelData.genres.map((g) => g.name).join(", "));
+        setSynopsis(novelData.description);
+        setStatus(novelData.status);
+        setImagePreview(novelData.coverImageUrl || "");
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+        setError("Không thể tải dữ liệu.");
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    fetchNovel();
-  }, [id]);
+    fetchData();
+  }, [id, user, isAuthenticated, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
-        setCoverImage(file.name);
       };
       reader.readAsDataURL(file);
     }
@@ -174,8 +188,8 @@ export default function EditNovelPage({ params }: { params: { id: string } }) {
               >
                 <option value="">Chọn thể loại</option>
                 {genres.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
+                  <option key={g.id} value={g.id}>
+                    {g.name}
                   </option>
                 ))}
               </select>
@@ -228,7 +242,7 @@ export default function EditNovelPage({ params }: { params: { id: string } }) {
             <Editor
               apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
               onInit={(evt, editor) => (editorRef.current = editor)}
-              initialValue={novel.content}
+              initialValue={novel.description}
               init={{
                 height: 500,
                 menubar: false,
