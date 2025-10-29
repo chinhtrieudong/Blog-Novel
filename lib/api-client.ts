@@ -29,6 +29,8 @@ import {
   TokenResponse,
   GenreResponse,
   PaginationParams,
+  AuthorRequest,
+  AuthorResponse,
 } from "@/types/api";
 
 // Base API configuration
@@ -40,8 +42,34 @@ class ApiClient {
   private token: string | null = null;
 
   constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = API_BASE_URL || "http://localhost:8080/api";
+    // Use the provided baseURL, or fallback to current origin + /api, or just /api
+    this.baseURL =
+      baseURL ||
+      (typeof window !== "undefined"
+        ? `${window.location.origin}/api`
+        : "/api");
+    console.log("API Base URL:", this.baseURL);
+    console.log("Environment API_BASE_URL:", API_BASE_URL);
     this.loadToken();
+
+    // Test backend connectivity
+    this.testBackendConnection();
+  }
+
+  private async testBackendConnection() {
+    try {
+      console.log("Testing backend connection...");
+      const response = await fetch(`${this.baseURL}/posts`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      console.log("Backend test response status:", response.status);
+      console.log("Backend test response ok:", response.ok);
+    } catch (error) {
+      console.error("Backend connection test failed:", error);
+    }
   }
 
   private loadToken() {
@@ -72,12 +100,19 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
       headers: {
-        "Content-Type": "application/json",
         Accept: "application/json",
         ...options.headers,
       },
       ...options,
     };
+
+    // Don't set Content-Type for FormData - browser will set it with boundary
+    if (!(options.body instanceof FormData)) {
+      config.headers = {
+        "Content-Type": "application/json",
+        ...config.headers,
+      };
+    }
 
     if (this.token) {
       config.headers = {
@@ -90,6 +125,12 @@ class ApiClient {
       console.log("Making API request to:", url);
       console.log("Request headers:", config.headers);
       console.log("Request method:", config.method || "GET");
+      if (options.body instanceof FormData) {
+        console.log("Sending FormData:");
+        for (let [key, value] of options.body.entries()) {
+          console.log(key, value);
+        }
+      }
 
       const response = await fetch(url, config);
       console.log("Response status:", response.status);
@@ -106,6 +147,16 @@ class ApiClient {
       }
 
       if (!response.ok) {
+        // Handle token expiration (401)
+        if (response.status === 401 && this.token) {
+          console.log("Token expired, clearing authentication");
+          this.removeToken();
+          // Dispatch custom event to notify auth context
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("auth:token-expired"));
+          }
+        }
+
         const errorMessage =
           data?.message || `API request failed with status ${response.status}`;
         throw new Error(errorMessage);
@@ -120,11 +171,12 @@ class ApiClient {
 
   private async uploadRequest<T>(
     endpoint: string,
-    formData: FormData
+    formData: FormData,
+    method: string = "POST"
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
-      method: "POST",
+      method: method,
       headers: {},
       body: formData,
     };
@@ -243,6 +295,62 @@ class ApiClient {
     return response;
   }
 
+  // Author API
+  async getAuthors(): Promise<ApiResponse<AuthorResponse[]>> {
+    return this.request<AuthorResponse[]>("/authors");
+  }
+
+  async getAuthorById(id: number): Promise<ApiResponse<AuthorResponse>> {
+    return this.request<AuthorResponse>(`/authors/${id}`);
+  }
+
+  async createAuthor(
+    data: AuthorRequest
+  ): Promise<ApiResponse<AuthorResponse>> {
+    if (data.avatar) {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      if (data.bio) formData.append("bio", data.bio);
+      formData.append("avatar", data.avatar);
+
+      return this.uploadRequest<AuthorResponse>("/authors", formData);
+    } else {
+      return this.request<AuthorResponse>("/authors", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    }
+  }
+
+  async updateAuthor(
+    id: number,
+    data: AuthorRequest
+  ): Promise<ApiResponse<AuthorResponse>> {
+    if (data.avatar) {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      if (data.bio) formData.append("bio", data.bio);
+      formData.append("avatar", data.avatar);
+
+      return this.uploadRequest<AuthorResponse>(
+        `/authors/${id}`,
+        formData,
+        "PUT"
+      );
+    } else {
+      return this.request<AuthorResponse>(`/authors/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+    }
+  }
+
+  async deleteAuthor(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/authors/${id}`, {
+      method: "DELETE",
+    });
+  }
+
   // Novel API
   async getNovels(
     params?: NovelQueryParams
@@ -275,8 +383,26 @@ class ApiClient {
     );
   }
 
+  async getNovelsByCreator(
+    creatorId: number,
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<NovelResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    return this.request<PagedResponse<NovelResponse>>(
+      `/novels/creator/${creatorId}${query ? `?${query}` : ""}`
+    );
+  }
+
   async getNovelById(id: number): Promise<ApiResponse<NovelResponse>> {
     return this.request<NovelResponse>(`/novels/${id}`);
+  }
+
+  async getRelatedNovels(id: number): Promise<ApiResponse<NovelResponse[]>> {
+    return this.request<NovelResponse[]>(`/novels/related/${id}`);
   }
 
   async createNovel(data: NovelRequest): Promise<ApiResponse<NovelResponse>> {
@@ -284,9 +410,13 @@ class ApiClient {
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
-      if (data.authorId) formData.append("authorId", data.authorId.toString());
+      if (data.authorIds) {
+        data.authorIds.forEach((id: number) =>
+          formData.append("authorIds", id.toString())
+        );
+      }
       if (data.genreIds) {
-        data.genreIds.forEach((id) =>
+        data.genreIds.forEach((id: number) =>
           formData.append("genreIds", id.toString())
         );
       }
@@ -295,11 +425,29 @@ class ApiClient {
 
       return this.uploadRequest<NovelResponse>("/novels", formData);
     } else {
-      return this.request<NovelResponse>("/novels", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      if (data.authorIds) {
+        data.authorIds.forEach((id: number) =>
+          formData.append("authorIds", id.toString())
+        );
+      }
+      if (data.genreIds) {
+        data.genreIds.forEach((id: number) =>
+          formData.append("genreIds", id.toString())
+        );
+      }
+      if (data.status) formData.append("status", data.status);
+
+      return this.uploadRequest<NovelResponse>("/novels", formData);
     }
+  }
+
+  async createNovelFromFormData(
+    formData: FormData
+  ): Promise<ApiResponse<NovelResponse>> {
+    return this.uploadRequest<NovelResponse>("/novels", formData);
   }
 
   async updateNovel(
@@ -310,9 +458,13 @@ class ApiClient {
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
-      if (data.authorId) formData.append("authorId", data.authorId.toString());
+      if (data.authorIds) {
+        data.authorIds.forEach((id: number) =>
+          formData.append("authorIds", id.toString())
+        );
+      }
       if (data.genreIds) {
-        data.genreIds.forEach((genreId) =>
+        data.genreIds.forEach((genreId: number) =>
           formData.append("genreIds", genreId.toString())
         );
       }
@@ -326,6 +478,13 @@ class ApiClient {
         body: JSON.stringify(data),
       });
     }
+  }
+
+  async updateNovelFromFormData(
+    id: number,
+    formData: FormData
+  ): Promise<ApiResponse<NovelResponse>> {
+    return this.uploadRequest<NovelResponse>(`/novels/${id}`, formData);
   }
 
   async deleteNovel(id: number): Promise<ApiResponse<void>> {
@@ -460,12 +619,14 @@ class ApiClient {
       if (data.authorId) formData.append("authorId", data.authorId.toString());
       if (data.status) formData.append("status", data.status);
       if (data.categoryIds) {
-        data.categoryIds.forEach((id) =>
+        data.categoryIds.forEach((id: number) =>
           formData.append("categoryIds", id.toString())
         );
       }
       if (data.tagIds) {
-        data.tagIds.forEach((id) => formData.append("tagIds", id.toString()));
+        data.tagIds.forEach((id: number) =>
+          formData.append("tagIds", id.toString())
+        );
       }
       formData.append("coverImage", data.coverImage);
 
@@ -478,6 +639,12 @@ class ApiClient {
     }
   }
 
+  async createPostFromFormData(
+    formData: FormData
+  ): Promise<ApiResponse<PostResponse>> {
+    return this.uploadRequest<PostResponse>("/posts", formData);
+  }
+
   async updatePost(
     id: number,
     data: PostRequest
@@ -485,26 +652,43 @@ class ApiClient {
     if (data.coverImage) {
       const formData = new FormData();
       formData.append("title", data.title);
-      formData.append("content", data.content);
+      formData.append("content", data.content || "");
       if (data.authorId) formData.append("authorId", data.authorId.toString());
       if (data.status) formData.append("status", data.status);
       if (data.categoryIds) {
-        data.categoryIds.forEach((id) =>
+        data.categoryIds.forEach((id: number) =>
           formData.append("categoryIds", id.toString())
         );
       }
       if (data.tagIds) {
-        data.tagIds.forEach((id) => formData.append("tagIds", id.toString()));
+        data.tagIds.forEach((id: number) =>
+          formData.append("tagIds", id.toString())
+        );
       }
       formData.append("coverImage", data.coverImage);
 
       return this.uploadRequest<PostResponse>(`/posts/${id}`, formData);
     } else {
+      const updateData = {
+        title: data.title,
+        content: data.content || "",
+        authorId: data.authorId,
+        status: data.status,
+        categoryIds: data.categoryIds,
+        tagIds: data.tagIds,
+      };
       return this.request<PostResponse>(`/posts/${id}`, {
         method: "PUT",
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
     }
+  }
+
+  async updatePostFromFormData(
+    id: number,
+    formData: FormData
+  ): Promise<ApiResponse<PostResponse>> {
+    return this.uploadRequest<PostResponse>(`/posts/${id}`, formData, "PUT");
   }
 
   async deletePost(id: number): Promise<ApiResponse<void>> {
@@ -640,7 +824,7 @@ class ApiClient {
     if (params.size) searchParams.append("size", params.size.toString());
 
     return this.request<PagedResponse<PostResponse>>(
-      `/search/posts?${searchParams.toString()}`
+      `/posts?${searchParams.toString()}`
     );
   }
 
@@ -702,6 +886,11 @@ class ApiClient {
 
   async getAnalyticsTraffic(): Promise<ApiResponse<AnalyticsTrafficResponse>> {
     return this.request<AnalyticsTrafficResponse>("/analytics/traffic");
+  }
+
+  // Categories API
+  async getCategories(): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>("/categories");
   }
 }
 
