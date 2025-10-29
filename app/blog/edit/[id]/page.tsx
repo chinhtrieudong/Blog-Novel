@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Editor } from "@tinymce/tinymce-react";
-import { ChevronLeft, Save, Send, Upload } from "lucide-react";
+import {
+  ChevronLeft,
+  Save,
+  Send,
+  XCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api-client";
+import { PostResponse, PostRequest } from "@/types/api";
 
 interface Category {
   id: number;
@@ -15,7 +23,12 @@ interface Category {
   description?: string;
 }
 
-export default function NewBlogPostPage() {
+export default function EditPostPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const [post, setPost] = useState<PostResponse | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -24,41 +37,99 @@ export default function NewBlogPostPage() {
   const [categoryIds, setCategoryIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unauthorized, setUnauthorized] = useState(false);
+  const [id, setId] = useState<string>("");
   const editorRef = useRef<any>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
 
-  // Fetch categories on component mount (only if authenticated)
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const fetchCategories = async () => {
-        try {
-          const response = await apiClient.getCategories();
-          if (response && response.data) {
-            const categoryObjects = response.data.map((cat: any) => ({
-              id: cat.id,
-              name: cat.name,
-              slug: cat.slug,
-              description: cat.description,
-            }));
-            setCategories(categoryObjects);
-          } else {
-            throw new Error("Categories API not available");
-          }
-        } catch (err) {
-          setCategories([
-            { id: 1, name: "Công nghệ", slug: "cong-nghe" },
-            { id: 2, name: "Đời sống", slug: "doi-song" },
-            { id: 3, name: "Kinh nghiệm", slug: "kinh-nghiem" },
-          ]);
+    const initializeParams = async () => {
+      const resolvedParams = await params;
+      setId(resolvedParams.id);
+    };
+
+    initializeParams();
+  }, [params]);
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiClient.getCategories();
+        if (response && response.data) {
+          const categoryObjects = response.data.map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+            description: cat.description,
+          }));
+          setCategories(categoryObjects);
+        } else {
+          throw new Error("Categories API not available");
         }
-      };
+      } catch (err) {
+        setCategories([
+          { id: 1, name: "Công nghệ", slug: "cong-nghe" },
+          { id: 2, name: "Đời sống", slug: "doi-song" },
+          { id: 3, name: "Du lịch", slug: "du-lich" },
+          { id: 4, name: "Sách", slug: "sach" },
+          { id: 5, name: "Phim ảnh", slug: "phim-anh" },
+          { id: 6, name: "Ẩm thực", slug: "am-thuc" },
+          { id: 7, name: "Sức khỏe", slug: "suc-khoe" },
+        ]);
+      }
+    };
+
+    if (isAuthenticated && user) {
       fetchCategories();
     }
   }, [isAuthenticated, user]);
+
+  // Fetch post data
+  useEffect(() => {
+    async function fetchData() {
+      if (!isAuthenticated || !user) {
+        router.push("/login");
+        return;
+      }
+
+      // Don't fetch if id is empty
+      if (!id) {
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const postResponse = await apiClient.getPostById(parseInt(id));
+        const postData = postResponse.data;
+
+        // Check if user owns this post
+        if (postData.authorId !== user.id) {
+          setUnauthorized(true);
+          return;
+        }
+
+        setPost(postData);
+        setTitle(postData.title);
+        setContent(postData.content);
+        setCategoryIds(postData.categories.map((cat) => cat.id));
+        setTagIds(postData.tags.map((tag) => tag.id));
+        setStatus(postData.status);
+        setImagePreview(postData.coverImage || "");
+      } catch (err) {
+        console.error("Failed to fetch post data:", err);
+        setError("Không thể tải dữ liệu bài viết.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [id, user, isAuthenticated, router]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -66,18 +137,6 @@ export default function NewBlogPostPage() {
       router.push("/login");
     }
   }, [isAuthenticated, user, router]);
-
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">
-            Redirecting to login...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,15 +164,16 @@ export default function NewBlogPostPage() {
       // Add title
       formData.append("title", title.trim());
 
-      // Get editor content
+      // Get editor content (this becomes "content" in the API)
       const editorContent = editorRef.current?.getContent() || "";
       formData.append("content", editorContent);
 
-      // Add categories and tags
+      // Add category IDs (categories become "categoryIds" in the API)
       categoryIds.forEach((id: number) => {
         formData.append("categoryIds", id.toString());
       });
 
+      // Add tag IDs (separate from categoryIds)
       tagIds.forEach((id: number) => {
         formData.append("tagIds", id.toString());
       });
@@ -143,12 +203,15 @@ export default function NewBlogPostPage() {
         console.log(key, value);
       }
 
-      const response = await apiClient.createPostFromFormData(formData);
+      const response = await apiClient.updatePostFromFormData(
+        post!.id,
+        formData
+      );
 
-      router.push("/blog");
+      router.push("/my-posts");
     } catch (err: any) {
       setError(
-        err.message || "Có lỗi xảy ra khi tạo bài viết. Vui lòng thử lại."
+        err.message || "Có lỗi xảy ra khi cập nhật bài viết. Vui lòng thử lại."
       );
     } finally {
       setIsSubmitting(false);
@@ -157,46 +220,111 @@ export default function NewBlogPostPage() {
 
   const handleSaveDraft = () => {
     setStatus("DRAFT");
-    formRef.current?.requestSubmit();
   };
 
   const handlePublish = () => {
     setStatus("PUBLISHED");
-    formRef.current?.requestSubmit();
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="text-gray-600 dark:text-gray-400">
+            Đang tải dữ liệu bài viết...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (unauthorized) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <p className="text-red-600 dark:text-red-400 mb-4">
+            Bạn không có quyền chỉnh sửa bài viết này.
+          </p>
+          <Link
+            href="/my-posts"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Quay lại bài viết của tôi
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setIsLoading(true);
+              // Re-initialize params and fetch data
+              const initializeAndFetch = async () => {
+                const resolvedParams = await params;
+                setId(resolvedParams.id);
+              };
+              initializeAndFetch();
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Không tìm thấy bài viết.
+          </p>
+          <Link
+            href="/my-posts"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Quay lại bài viết của tôi
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Link
-              href="/blog"
+              href="/my-posts"
               className="mr-4 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <ChevronLeft className="w-5 h-5" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Viết Bài Viết Mới
+              Chỉnh sửa bài viết
             </h1>
           </div>
           <div className="flex items-center space-x-3">
             <button
               type="button"
-              onClick={handleSaveDraft}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-500 text-white hover:bg-gray-600"
-            >
-              <Save className="w-4 h-4 inline-block mr-2" />
-              Lưu Nháp
-            </button>
-            <button
-              type="button"
-              onClick={handlePublish}
+              onClick={() => setStatus("PUBLISHED")}
               className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
             >
               <Send className="w-4 h-4 inline-block mr-2" />
-              Xuất Bản
+              Xuất bản
             </button>
           </div>
         </div>
@@ -210,7 +338,7 @@ export default function NewBlogPostPage() {
         )}
 
         {/* Form */}
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -324,7 +452,7 @@ export default function NewBlogPostPage() {
             <Editor
               apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
               onInit={(evt, editor) => (editorRef.current = editor)}
-              readonly={false}
+              initialValue={content}
               init={{
                 height: 600,
                 menubar: false,
@@ -361,8 +489,7 @@ export default function NewBlogPostPage() {
           {/* Submit Button */}
           <div className="flex justify-end">
             <button
-              type="button"
-              onClick={handlePublish}
+              type="submit"
               disabled={isSubmitting}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >

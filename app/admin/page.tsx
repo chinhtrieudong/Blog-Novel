@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   PenTool,
   BookOpen,
@@ -15,11 +15,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import apiClient from "@/lib/api-client";
 import {
   DeleteConfirmationModal,
   UserViewModal,
   UserEditModal,
 } from "@/components/admin/modals";
+import { StatusChangeModal } from "@/components/admin/modals/StatusChangeModal";
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -34,145 +36,181 @@ export default function AdminPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
+  // Status change modal state
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Novel status change modal state
+  const [isNovelStatusModalOpen, setIsNovelStatusModalOpen] = useState(false);
+  const [selectedNovel, setSelectedNovel] = useState<any>(null);
+  const [isUpdatingNovelStatus, setIsUpdatingNovelStatus] = useState(false);
+
+  // State for API data
+  const [posts, setPosts] = useState<any[]>([]);
+  const [novels, setNovels] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch posts from backend API (port 8080)
+        try {
+          const postsResponse = await apiClient.getPosts({ page: 0, size: 5 });
+          if (postsResponse.data?.content) {
+            setPosts(postsResponse.data.content);
+          }
+        } catch (error) {
+          console.error("Error fetching posts:", error);
+          setPosts([]);
+        }
+
+        // Fetch novels from backend API (port 8080)
+        try {
+          const novelsResponse = await apiClient.getNovels({
+            page: 0,
+            size: 5,
+          });
+          if (novelsResponse.data?.content) {
+            setNovels(novelsResponse.data.content);
+          }
+        } catch (error) {
+          console.error("Error fetching novels:", error);
+          setNovels([]);
+        }
+
+        // Fetch users if admin from backend API (port 8080)
+        if (user?.role === "ADMIN") {
+          try {
+            // Note: apiClient.getUsers() might need to be implemented
+            const usersResponse = await fetch(
+              "http://localhost:8080/api/users?page=0&size=5"
+            );
+
+            if (!usersResponse.ok) {
+              console.error("Users API response not ok:", usersResponse.status);
+              setUsers([]);
+              return;
+            }
+
+            const responseText = await usersResponse.text();
+            if (!responseText.trim()) {
+              console.error("Empty response from users API");
+              setUsers([]);
+              return;
+            }
+
+            const usersData = JSON.parse(responseText);
+            if (usersData.code === 200 && usersData.data?.content) {
+              setUsers(usersData.data.content);
+            } else {
+              console.error("Invalid users API response format:", usersData);
+              setUsers([]);
+            }
+          } catch (error) {
+            console.error("Error fetching users:", error);
+            setUsers([]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  // Calculate stats from real data
   const stats = {
-    totalPosts: 127,
-    totalNovels: 23,
-    totalUsers: 15678,
-    totalViews: 892456,
+    totalPosts: posts.length,
+    totalNovels: novels.length,
+    totalUsers: users.length,
+    totalViews:
+      posts.reduce((sum, post) => sum + (post.viewCount || 0), 0) +
+      novels.reduce((sum, novel) => sum + (novel.views || 0), 0),
     monthlyGrowth: {
-      posts: 12,
-      novels: 3,
-      users: 234,
-      views: 45678,
+      posts: Math.floor(posts.length * 0.1),
+      novels: Math.floor(novels.length * 0.1),
+      users: Math.floor(users.length * 0.1),
+      views: Math.floor(
+        posts.reduce((sum, post) => sum + (post.viewCount || 0), 0) * 0.1
+      ),
     },
   };
 
-  const recentPosts = [
-    {
-      id: 1,
-      title: "Những xu hướng công nghệ đáng chú ý năm 2024",
-      status: "Đã xuất bản",
-      date: "2024-12-15",
-      views: 2847,
-      category: "Công nghệ",
-      author: "Admin",
-    },
-    {
-      id: 2,
-      title: "Hướng dẫn thiết lập workspace tại nhà hiệu quả",
-      status: "Nháp",
-      date: "2024-12-14",
-      views: 0,
-      category: "Đời sống",
-      author: "Admin",
-    },
-    {
-      id: 3,
-      title: 'Review sách: "Atomic Habits" - Thói quen nguyên tử',
-      status: "Đã xuất bản",
-      date: "2024-12-13",
-      views: 1567,
-      category: "Sách",
-      author: "Admin",
-    },
-    {
-      id: 4,
-      title: "Khám phá ẩm thực đường phố Hà Nội",
-      status: "Đã xuất bản",
-      date: "2024-12-12",
-      views: 2156,
-      category: "Ẩm thực",
-      author: "Admin",
-    },
-    {
-      id: 5,
-      title: "Top 10 bộ phim hay nhất năm 2024",
-      status: "Đang xem xét",
-      date: "2024-12-11",
-      views: 0,
-      category: "Phim ảnh",
-      author: "Admin",
-    },
-  ];
+  // Transform API data for display
+  const recentPosts = posts.map((post) => {
+    console.log("Post data:", post); // Debug log
+    console.log("Post status:", post.status); // Debug log
 
-  const recentNovels = [
-    {
-      id: 1,
-      title: "Hành Trình Đến Với Ánh Sáng",
-      chapters: 45,
-      status: "Đang cập nhật",
-      lastUpdate: "2024-12-15",
-      views: 25420,
-      rating: 4.8,
-    },
-    {
-      id: 2,
-      title: "Tình Yêu Trong Mưa Thu",
-      chapters: 32,
-      status: "Hoàn thành",
-      lastUpdate: "2024-12-10",
-      views: 18350,
-      rating: 4.6,
-    },
-    {
-      id: 3,
-      title: "Thám Tử Thành Phố",
-      chapters: 28,
-      status: "Đang cập nhật",
-      lastUpdate: "2024-12-12",
-      views: 15876,
-      rating: 4.7,
-    },
-    {
-      id: 4,
-      title: "Chiến Binh Không Gian",
-      chapters: 67,
-      status: "Đang cập nhật",
-      lastUpdate: "2024-12-14",
-      views: 34560,
-      rating: 4.9,
-    },
-    {
-      id: 5,
-      title: "Học Viện Ma Pháp",
-      status: "Đang cập nhật",
-      chapters: 56,
-      lastUpdate: "2024-12-13",
-      views: 28900,
-      rating: 4.7,
-    },
-  ];
+    let displayStatus = "Nháp"; // Default
 
-  // Thêm data cho user management
-  const recentUsers = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@email.com",
-      joinDate: "2024-12-10",
-      status: "Hoạt động",
-      role: "Độc giả",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      email: "tranthib@email.com",
-      joinDate: "2024-12-09",
-      status: "Hoạt động",
-      role: "Độc giả",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      email: "levanc@email.com",
-      joinDate: "2024-12-08",
-      status: "Tạm khóa",
-      role: "Độc giả",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  ];
+    switch (post.status) {
+      case "PUBLISHED":
+        displayStatus = "Đã xuất bản";
+        break;
+      case "PENDING":
+        displayStatus = "Chờ duyệt";
+        break;
+      case "DRAFT":
+        displayStatus = "Nháp";
+        break;
+      case "REJECTED":
+        displayStatus = "Đã từ chối";
+        break;
+      default:
+        displayStatus = post.status || "Nháp";
+    }
+
+    return {
+      id: post.id,
+      title: post.title || "Chưa cập nhật",
+      status: displayStatus,
+      date: post.createdAt
+        ? new Date(post.createdAt).toLocaleDateString("vi-VN")
+        : "Chưa cập nhật",
+      views: post.viewCount || 0,
+      category: post.categories?.[0]?.name || "Chưa cập nhật",
+      author: post.author?.username || "Chưa cập nhật",
+    };
+  });
+
+  // Transform API data for display
+  const recentNovels = novels.map((novel) => ({
+    id: novel.id,
+    title: novel.title || "Chưa cập nhật",
+    chapters: novel.chapters || 0,
+    status: novel.status === "COMPLETED" ? "Hoàn thành" : "Đang cập nhật",
+    lastUpdate:
+      novel.lastUpdate || novel.updatedAt || novel.createdAt
+        ? new Date(
+            novel.lastUpdate || novel.updatedAt || novel.createdAt
+          ).toLocaleDateString("vi-VN")
+        : "Chưa cập nhật",
+    views: novel.views || 0,
+    rating: novel.rating || 0,
+  }));
+
+  // Transform API data for display
+  const recentUsers = users.map((user) => ({
+    id: user.id,
+    name: user.fullName || user.username || "Chưa cập nhật",
+    email: user.email || "Chưa cập nhật",
+    joinDate: user.createdAt
+      ? new Date(user.createdAt).toLocaleDateString("vi-VN")
+      : "Chưa cập nhật",
+    status: user.status === "ACTIVE" ? "Hoạt động" : "Tạm khóa",
+    role: user.role === "USER" ? "Độc giả" : user.role || "Chưa cập nhật",
+    avatar: "/placeholder.svg?height=40&width=40",
+  }));
 
   const tabs = [
     ...(user?.role === "ADMIN"
@@ -181,7 +219,10 @@ export default function AdminPage() {
     { id: "posts", name: "Quản lý Blog", icon: PenTool },
     { id: "novels", name: "Quản lý Tiểu thuyết", icon: BookOpen },
     ...(user?.role === "ADMIN"
-      ? [{ id: "users", name: "Người dùng", icon: Users }]
+      ? [
+          { id: "authors", name: "Quản lý Tác giả", icon: Users },
+          { id: "users", name: "Người dùng", icon: Users },
+        ]
       : []),
   ];
 
@@ -219,6 +260,95 @@ export default function AdminPage() {
     // Here you would implement the actual update logic
     setIsEditModalOpen(false);
     setSelectedUser(null);
+  };
+
+  // Status management handlers
+  const handleStatusClick = (post: any) => {
+    setSelectedPost(post);
+    setIsStatusModalOpen(true);
+  };
+
+  const handleNovelStatusClick = (novel: any) => {
+    setSelectedNovel(novel);
+    setIsNovelStatusModalOpen(true);
+  };
+
+  const handleStatusConfirm = async (newStatus: string) => {
+    if (!selectedPost) return;
+
+    try {
+      setIsUpdatingStatus(true);
+
+      // Call the API to update post status
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/posts/${
+          selectedPost.id
+        }/status?status=${newStatus}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        // Refresh posts data
+        const postsResponse = await apiClient.getPosts({ page: 0, size: 5 });
+        if (postsResponse.data?.content) {
+          setPosts(postsResponse.data.content);
+        }
+
+        setIsStatusModalOpen(false);
+        setSelectedPost(null);
+      } else {
+        throw new Error("Không thể cập nhật trạng thái bài viết.");
+      }
+    } catch (err) {
+      console.error("Failed to update post status:", err);
+      alert("Không thể cập nhật trạng thái bài viết. Vui lòng thử lại.");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleNovelStatusConfirm = async (newStatus: string) => {
+    if (!selectedNovel) return;
+
+    try {
+      setIsUpdatingNovelStatus(true);
+
+      // Call the API to update novel status
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/novels/${
+          selectedNovel.id
+        }/status?status=${newStatus}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        // Refresh novels data
+        const novelsResponse = await apiClient.getNovels({ page: 0, size: 5 });
+        if (novelsResponse.data?.content) {
+          setNovels(novelsResponse.data.content);
+        }
+
+        setIsNovelStatusModalOpen(false);
+        setSelectedNovel(null);
+      } else {
+        throw new Error("Không thể cập nhật trạng thái tiểu thuyết.");
+      }
+    } catch (err) {
+      console.error("Failed to update novel status:", err);
+      alert("Không thể cập nhật trạng thái tiểu thuyết. Vui lòng thử lại.");
+    } finally {
+      setIsUpdatingNovelStatus(false);
+    }
   };
 
   return (
@@ -459,15 +589,33 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              post.status === "Đã xuất bản"
-                                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                                : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-                            }`}
-                          >
-                            {post.status}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleStatusClick(post)}
+                              className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full hover:opacity-80 hover:shadow-md transition-all duration-200 cursor-pointer border-2 ${
+                                post.status === "Đã xuất bản"
+                                  ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800"
+                                  : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800"
+                              }`}
+                              title="Nhấp để thay đổi trạng thái"
+                            >
+                              <svg
+                                className="w-3 h-3 mr-1 opacity-60"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {post.status}
+                            </button>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                              (Nhấp để đổi)
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {post.date}
@@ -485,12 +633,6 @@ export default function AdminPage() {
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
                             >
                               <Eye className="w-4 h-4" />
-                            </Link>
-                            <Link
-                              href={`/admin/posts/edit/${post.id}`}
-                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
-                            >
-                              <Edit className="w-4 h-4" />
                             </Link>
                             <button
                               onClick={() =>
@@ -560,15 +702,33 @@ export default function AdminPage() {
                           {novel.chapters}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              novel.status === "Hoàn thành"
-                                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                                : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
-                            }`}
-                          >
-                            {novel.status}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleNovelStatusClick(novel)}
+                              className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full hover:opacity-80 hover:shadow-md transition-all duration-200 cursor-pointer border-2 ${
+                                novel.status === "Hoàn thành"
+                                  ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800"
+                                  : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800"
+                              }`}
+                              title="Nhấp để thay đổi trạng thái"
+                            >
+                              <svg
+                                className="w-3 h-3 mr-1 opacity-60"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              {novel.status}
+                            </button>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                              (Nhấp để đổi)
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {novel.lastUpdate}
@@ -580,12 +740,6 @@ export default function AdminPage() {
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
                             >
                               <Eye className="w-4 h-4" />
-                            </Link>
-                            <Link
-                              href={`/admin/novels/edit/${novel.id}`}
-                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
-                            >
-                              <Edit className="w-4 h-4" />
                             </Link>
                             <button
                               onClick={() =>
@@ -603,6 +757,65 @@ export default function AdminPage() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Authors Management Tab */}
+        {activeTab === "authors" && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Quản lý Tác giả
+              </h2>
+              <Link
+                href="/admin/authors/new"
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Thêm tác giả mới
+              </Link>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Tên tác giả
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Giới thiệu
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Avatar
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center">
+                        <div className="text-gray-500 dark:text-gray-400">
+                          <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>Đang phát triển...</p>
+                          <p className="text-sm mt-1">
+                            <Link
+                              href="/admin/authors"
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              Truy cập trang quản lý tác giả
+                            </Link>
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -789,6 +1002,28 @@ export default function AdminPage() {
           onClose={() => setIsEditModalOpen(false)}
           onSubmit={handleEditSubmit}
           user={selectedUser}
+        />
+
+        <StatusChangeModal
+          isOpen={isStatusModalOpen}
+          onClose={() => setIsStatusModalOpen(false)}
+          onConfirm={handleStatusConfirm}
+          currentStatus={
+            selectedPost?.status === "Đã xuất bản" ? "PUBLISHED" : "DRAFT"
+          }
+          title={selectedPost?.title || ""}
+          isLoading={isUpdatingStatus}
+        />
+
+        <StatusChangeModal
+          isOpen={isNovelStatusModalOpen}
+          onClose={() => setIsNovelStatusModalOpen(false)}
+          onConfirm={handleNovelStatusConfirm}
+          currentStatus={
+            selectedNovel?.status === "Hoàn thành" ? "COMPLETED" : "DRAFT"
+          }
+          title={selectedNovel?.title || ""}
+          isLoading={isUpdatingNovelStatus}
         />
       </div>
     </div>

@@ -23,10 +23,16 @@ export interface ForgotPasswordRequest {
 export interface NovelRequest {
   title: string;
   description: string;
-  authorId?: number;
+  authorIds?: number[];
   genreIds?: number[];
   status?: NovelStatus;
   coverImage?: File;
+}
+
+export interface AuthorRequest {
+  name: string;
+  bio?: string;
+  avatar?: File;
 }
 
 export interface PostRequest {
@@ -101,7 +107,7 @@ export interface NovelResponse {
   id: number;
   title: string;
   description: string;
-  author: UserResponse;
+  author: AuthorResponse;
   genres: GenreResponse[];
   status: NovelStatus;
   coverImageUrl?: string;
@@ -112,6 +118,13 @@ export interface NovelResponse {
   createdAt: string;
   updatedAt: string;
   lastChapterUpdate?: string;
+}
+
+export interface AuthorResponse {
+  id: number;
+  name: string;
+  bio?: string;
+  avatarUrl?: string;
 }
 
 export interface ChapterResponse {
@@ -133,12 +146,13 @@ export interface PostResponse {
   content: string;
   excerpt?: string;
   slug: string;
-  coverImageUrl?: string;
+  coverImage?: string | null;
   status: string;
-  author: UserResponse;
+  authorId: number;
+  authorName: string;
   categories: CategoryResponse[];
   tags: TagResponse[];
-  views: number;
+  viewCount: number;
   likes: number;
   createdAt: string;
   updatedAt: string;

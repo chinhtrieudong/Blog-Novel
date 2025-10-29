@@ -24,9 +24,9 @@ export default function MyNovelsPage() {
 
     try {
       setIsLoading(true);
-      console.log("Fetching novels for user:", user.id, user.username);
+      console.log("Fetching novels for creator:", user.id, user.username);
 
-      const response = await apiClient.getNovelsByUser(user.id);
+      const response = await apiClient.getNovelsByCreator(user.id);
       console.log("API Response:", response);
 
       if (response && response.data) {

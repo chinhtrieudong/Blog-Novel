@@ -1,105 +1,98 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Mock posts data
-const MOCK_POSTS = [
-  {
-    id: 1,
-    title: "Giới thiệu về Next.js 15",
-    content:
-      "Next.js 15 là một framework React mạnh mẽ với nhiều tính năng mới...",
-    excerpt:
-      "Next.js 15 là một framework React mạnh mẽ với nhiều tính năng mới...",
-    slug: "gioi-thieu-ve-nextjs-15",
-    coverImageUrl: "/placeholder.svg",
-    status: "published",
-    author: {
-      id: 4,
-      username: "chinh1",
-      email: "lebachinh1@gmail.com",
-      fullName: null,
-      role: "ADMIN",
-      status: "ACTIVE",
-      createdAt: "2025-09-25T03:00:24Z",
-      updatedAt: "2025-09-25T15:06:50Z",
-    },
-    categories: [{ id: 1, name: "Công nghệ", slug: "cong-nghe" }],
-    tags: [
-      { id: 1, name: "Next.js", slug: "nextjs" },
-      { id: 2, name: "React", slug: "react" },
-    ],
-    views: 150,
-    likes: 25,
-    createdAt: "2025-01-15T10:30:00Z",
-    updatedAt: "2025-01-15T10:30:00Z",
-    publishedAt: "2025-01-15T10:30:00Z",
-  },
-  {
-    id: 2,
-    title: "Hướng dẫn sử dụng Tailwind CSS",
-    content: "Tailwind CSS là một utility-first CSS framework...",
-    excerpt: "Tailwind CSS là một utility-first CSS framework...",
-    slug: "huong-dan-su-dung-tailwind-css",
-    coverImageUrl: "/placeholder.svg",
-    status: "published",
-    author: {
-      id: 4,
-      username: "chinh1",
-      email: "lebachinh1@gmail.com",
-      fullName: null,
-      role: "ADMIN",
-      status: "ACTIVE",
-      createdAt: "2025-09-25T03:00:24Z",
-      updatedAt: "2025-09-25T15:06:50Z",
-    },
-    categories: [{ id: 1, name: "Công nghệ", slug: "cong-nghe" }],
-    tags: [
-      { id: 3, name: "CSS", slug: "css" },
-      { id: 4, name: "Tailwind", slug: "tailwind" },
-    ],
-    views: 89,
-    likes: 12,
-    createdAt: "2025-01-10T14:20:00Z",
-    updatedAt: "2025-01-10T14:20:00Z",
-    publishedAt: "2025-01-10T14:20:00Z",
-  },
-];
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "0");
     const size = parseInt(searchParams.get("size") || "10");
     const title = searchParams.get("title");
+    const search = searchParams.get("q");
 
-    let filteredPosts = MOCK_POSTS;
+    // Build query parameters for external API
+    const queryParams = new URLSearchParams();
+    queryParams.append("page", page.toString());
+    queryParams.append("size", size.toString());
+    if (title) queryParams.append("title", title);
+    if (search) queryParams.append("q", search);
 
-    // Filter by title if provided
-    if (title) {
-      filteredPosts = filteredPosts.filter((post) =>
-        post.title.toLowerCase().includes(title.toLowerCase())
+    // Fetch from external API
+    const externalApiUrl = `${
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api"
+    }/posts?${queryParams.toString()}`;
+
+    const response = await fetch(externalApiUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`External API responded with status ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Filter to only show published posts
+    let filteredPosts = data.data.content || [];
+    filteredPosts = filteredPosts.filter(
+      (post: any) => post.status === "PUBLISHED"
+    );
+
+    // Update the response with filtered data
+    const filteredResponse = {
+      ...data,
+      data: {
+        ...data.data,
+        content: filteredPosts,
+        totalElements: filteredPosts.length,
+        totalPages: Math.ceil(filteredPosts.length / size),
+      },
+    };
+
+    return NextResponse.json(filteredResponse);
+  } catch (error) {
+    console.error("Get posts error:", error);
+    return NextResponse.json(
+      {
+        code: 500,
+        message: "Internal server error",
+        data: null,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Forward the request to the external API
+    const externalApiUrl = `${
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api"
+    }/posts`;
+
+    // Get the form data from the request
+    const formData = await request.formData();
+
+    // Forward the form data to the external API
+    const response = await fetch(externalApiUrl, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message ||
+          `External API responded with status ${response.status}`
       );
     }
 
-    // Pagination
-    const startIndex = page * size;
-    const endIndex = startIndex + size;
-    const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+    const data = await response.json();
 
-    return NextResponse.json({
-      code: 200,
-      message: "Posts fetched successfully",
-      data: {
-        content: paginatedPosts,
-        totalElements: filteredPosts.length,
-        totalPages: Math.ceil(filteredPosts.length / size),
-        size,
-        number: page,
-        first: page === 0,
-        last: endIndex >= filteredPosts.length,
-      },
-    });
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Get posts error:", error);
+    console.error("Create post error:", error);
     return NextResponse.json(
       {
         code: 500,

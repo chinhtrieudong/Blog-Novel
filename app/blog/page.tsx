@@ -28,13 +28,12 @@ export default function BlogPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/categories");
-      if (response.ok) {
-        const data = await response.json();
-        const categoryNamesList = data.data.map((cat: any) => cat.name);
+      const response = await apiClient.getCategories();
+      if (response && response.data) {
+        const categoryNamesList = response.data.map((cat: any) => cat.name);
 
         const mapping: { [key: string]: number } = {};
-        data.data.forEach((cat: any) => {
+        response.data.forEach((cat: any) => {
           mapping[cat.name] = cat.id;
         });
         setCategoryMapping(mapping);
@@ -73,6 +72,7 @@ export default function BlogPage() {
       const params: PostQueryParams = {
         page: currentPage - 1,
         size: 10,
+        status: "PUBLISHED",
       };
 
       if (selectedCategory && selectedCategory !== "Tất cả") {
@@ -112,13 +112,15 @@ export default function BlogPage() {
         title: item.title,
         content: item.excerpt || "Nội dung không có sẵn",
         excerpt: item.excerpt,
-        coverImageUrl: item.coverImage,
-        author: { fullName: item.authorName, username: item.authorName },
-        categories: [],
-        views: 0,
-        createdAt: new Date().toISOString(),
-        publishedAt: new Date().toISOString(),
-        status: "published",
+        coverImage: item.coverImage,
+        authorId: item.authorId,
+        authorName: item.authorName,
+        categories: item.categories || [],
+        tags: item.tags || [],
+        viewCount: item.viewCount || 0,
+        status: item.status || "published",
+        createdAt: item.createdAt || new Date().toISOString(),
+        updatedAt: item.updatedAt || new Date().toISOString(),
       }));
 
       setPosts(formattedResults);
@@ -278,16 +280,16 @@ export default function BlogPage() {
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
                       <span>
-                        {post.publishedAt
-                          ? formatDate(post.publishedAt)
-                          : "N/A"}
+                        {post.status === "PUBLISHED"
+                          ? formatDate(post.updatedAt)
+                          : "Chưa xuất bản"}
                       </span>
                     </div>
                     <div className="flex items-center">
                       <Eye className="w-4 h-4 mr-1" />
                       <span>
-                        {post.views ? post.views.toLocaleString() : "0"} lượt
-                        xem
+                        {post.viewCount ? post.viewCount.toLocaleString() : "0"}{" "}
+                        lượt xem
                       </span>
                     </div>
                   </div>

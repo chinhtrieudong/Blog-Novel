@@ -29,8 +29,12 @@ export default function HomePage() {
       setIsLoading(true);
       setError(null);
 
-      // Fetch latest posts
-      const postsResponse = await apiClient.getPosts({ page: 0, size: 10 });
+      // Fetch latest posts (only published ones)
+      const postsResponse = await apiClient.getPosts({
+        page: 0,
+        size: 10,
+        status: "PUBLISHED",
+      });
       setLatestPosts(postsResponse.data.content || []);
 
       // Fetch latest novels
