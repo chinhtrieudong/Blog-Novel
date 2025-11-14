@@ -275,7 +275,11 @@ export default function NovelsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                           <Users className="w-4 h-4 mr-1" />
-                          <span>{novel.author?.fullName || novel.author?.username || "Ẩn danh"}</span>
+                          <span>
+                            {novel.author?.fullName ||
+                              novel.author?.username ||
+                              "Ẩn danh"}
+                          </span>
                         </div>
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                           <Star className="w-4 h-4 mr-1 text-yellow-400" />
@@ -296,36 +300,37 @@ export default function NovelsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {stats.totalNovels}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {stats.totalNovels}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Tổng tiểu thuyết
+              </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Tổng tiểu thuyết
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {stats.completedNovels}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Hoàn thành
+              </div>
             </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {stats.completedNovels}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {stats.ongoingNovels}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Đang cập nhật
+              </div>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Hoàn thành
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              {stats.ongoingNovels}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Đang cập nhật
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {(stats.totalViews / 1000000).toFixed(1)}M
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Lượt đọc
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {(stats.totalViews / 1000000).toFixed(1)}M
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Lượt đọc
+              </div>
             </div>
           </div>
         </div>
@@ -550,6 +555,7 @@ export default function NovelsPage() {
             </button>
           </nav>
         </div>
+      </div>
     </div>
   );
 }
