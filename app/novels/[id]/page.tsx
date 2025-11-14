@@ -83,7 +83,7 @@ export default async function NovelDetailPage({
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-64 h-80 flex-shrink-0">
                   <img
-                    src={novel.coverImage || "/placeholder.svg"}
+                    src={novel.coverImage || "/placeholder-novel.svg"}
                     alt={novel.title}
                     className="w-full h-full object-cover rounded-lg"
                   />
@@ -289,7 +289,7 @@ export default async function NovelDetailPage({
                     className="flex space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
                   >
                     <img
-                      src={relatedNovel.coverImage || "/placeholder.svg"}
+                      src={relatedNovel.coverImage || "/placeholder-novel.svg"}
                       alt={relatedNovel.title}
                       className="w-12 h-16 object-cover rounded"
                     />

@@ -161,7 +161,7 @@ export default function MyNovelsPage() {
                   >
                     <div className="aspect-video bg-gray-200 dark:bg-gray-700">
                       <img
-                        src={novel.coverImage || "/placeholder.svg"}
+                        src={novel.coverImage || "/placeholder-novel.svg"}
                         alt={novel.title}
                         className="w-full h-full object-cover"
                       />

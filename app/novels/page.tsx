@@ -238,7 +238,7 @@ export default function NovelsPage() {
                     <div className="relative">
                       <div className="aspect-[3/4] bg-gradient-to-br from-purple-400 to-pink-500 relative overflow-hidden">
                         <img
-                          src={novel.coverImage || "/placeholder.svg"}
+                          src={novel.coverImage || "/placeholder-novel.svg"}
                           alt={novel.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
@@ -411,7 +411,7 @@ export default function NovelsPage() {
                 <div className="flex">
                   <div className="w-32 h-48 flex-shrink-0">
                     <img
-                      src={novel.coverImage || "/placeholder.svg"}
+                      src={novel.coverImage || "/placeholder-novel.svg"}
                       alt={novel.title}
                       className="w-full h-full object-cover"
                     />
