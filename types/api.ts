@@ -110,14 +110,15 @@ export interface NovelResponse {
   author: AuthorResponse;
   genres: GenreResponse[];
   status: NovelStatus;
-  coverImageUrl?: string;
+  coverImage?: string;
   totalChapters: number;
   totalViews: number;
   totalLikes: number;
-  rating: number;
+  avgRating: number;
   createdAt: string;
   updatedAt: string;
   lastChapterUpdate?: string;
+  createdBy?: number; // ID of the user who created this novel
 }
 
 export interface AuthorResponse {
@@ -133,7 +134,7 @@ export interface ChapterResponse {
   content: string;
   chapterNumber: number;
   novelId: number;
-  views: number;
+  viewCount: number;
   likes: number;
   wordCount: number;
   createdAt: string;
@@ -162,10 +163,11 @@ export interface PostResponse {
 export interface CommentResponse {
   id: number;
   content: string;
-  author: UserResponse;
+  user: UserResponse;
   parentId?: number;
   replies?: CommentResponse[];
   likes: number;
+  likeCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -201,7 +203,7 @@ export interface PostSearchResult {
   title: string;
   excerpt: string;
   slug: string;
-  coverImageUrl?: string;
+  coverImage?: string;
   author: string;
   publishedAt: string;
 }
@@ -211,8 +213,9 @@ export interface NovelSearchResult {
   title: string;
   description: string;
   author: string;
-  coverImageUrl?: string;
+  coverImage?: string;
   totalChapters: number;
+  avgRating: number;
   status: NovelStatus;
 }
 
