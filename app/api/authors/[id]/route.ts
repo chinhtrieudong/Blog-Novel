@@ -7,44 +7,29 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
-      return NextResponse.json(
-        {
-          code: 400,
-          message: "Invalid author ID",
-          data: null,
-        },
-        { status: 400 }
-      );
-    }
+    const id = params.id;
 
-    const author = await authorDataStorage.getAuthorById(id);
-    if (!author) {
-      return NextResponse.json(
-        {
-          code: 404,
-          message: "Author not found",
-          data: null,
-        },
-        { status: 404 }
-      );
-    }
+    // Fetch from external API (GET doesn't require auth)
+    const externalApiUrl = `${
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api"
+    }/authors/${id}`;
 
-    const authorResponse: AuthorResponse = {
-      id: author.id,
-      name: author.name,
-      bio: author.bio,
-      avatarUrl: author.avatarUrl,
-    };
-
-    return NextResponse.json({
-      code: 200,
-      message: "Author retrieved successfully",
-      data: authorResponse,
+    const response = await fetch(externalApiUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
     });
+
+    if (!response.ok) {
+      throw new Error(`External API responded with status ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Get author error:", error);
+    console.error("Get author by id error:", error);
     return NextResponse.json(
       {
         code: 500,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import novelDataStorage from "@/lib/novel-data-storage";
 import authorDataStorage from "@/lib/author-data-storage";
+import chapterDataStorage from "@/lib/chapter-data-storage";
 
 export async function GET(
   request: NextRequest,
@@ -20,12 +21,20 @@ export async function GET(
       (novel) => novel.author_id === creatorId
     );
 
+    // Get all chapters to count them per novel
+    const allChapters = await chapterDataStorage.getAllChapters();
+
     // Populate authors for response
     const allAuthors = await authorDataStorage.getAllAuthors();
     const novelResponses = creatorNovels.map((novel) => {
       const authorEntity = novel.author_id
         ? allAuthors.find((a) => a.id === novel.author_id)
         : null;
+
+      // Count actual chapters for this novel
+      const actualChapterCount = allChapters.filter(
+        (chapter) => chapter.novelId === novel.id
+      ).length;
 
       return {
         id: novel.id,
@@ -42,7 +51,6 @@ export async function GET(
         genre: novel.genre,
         chapters: novel.chapters,
         status: novel.status,
-        rating: novel.rating,
         reviews: novel.reviews,
         views: novel.views,
         likes: novel.likes,
@@ -52,9 +60,10 @@ export async function GET(
         publishDate: novel.publishDate,
         totalWords: novel.totalWords,
         averageChapterLength: novel.averageChapterLength,
-        coverImageUrl: novel.cover,
+        coverImage: novel.cover,
         totalViews: novel.views,
-        totalChapters: novel.chapters,
+        totalChapters: actualChapterCount,
+        avgRating: novel.rating,
         updatedAt: novel.updatedAt || novel.lastUpdate,
       };
     });
