@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import apiClient from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 export default function HomePage() {
+  const { isAuthenticated } = useAuth();
   const [latestPosts, setLatestPosts] = useState<any[]>([]);
   const [latestNovels, setLatestNovels] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +79,7 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/blog"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 hover:shadow-lg transition-all duration-300"
               >
                 <PenTool className="w-5 h-5 mr-2" />
                 Khám phá Blog
@@ -85,7 +87,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/novels"
-                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 hover:scale-105 hover:shadow-lg transition-all duration-300"
               >
                 <BookOpen className="w-5 h-5 mr-2" />
                 Đọc Tiểu thuyết
@@ -109,7 +111,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer">
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
                 <PenTool className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
@@ -122,7 +124,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer">
               <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
@@ -135,7 +137,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
@@ -190,44 +192,50 @@ export default function HomePage() {
                   </div>
                 ) : latestPosts.length > 0 ? (
                   latestPosts.map((post) => (
-                    <div
+                    <Link
                       key={post.id}
-                      className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                      href={`/blog/${post.id}`}
+                      className="block"
                     >
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        <span>
-                          {post.createdAt ? formatDate(post.createdAt) : "N/A"}
-                        </span>
-                        <Eye className="w-4 h-4 ml-4 mr-1" />
-                        <span>
-                          {(post.viewCount || post.views || 0).toLocaleString()}{" "}
-                          lượt xem
-                        </span>
-                        <span className="ml-4 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs">
-                          {post.categories?.length > 0
-                            ? post.categories[0].name
-                            : "Chưa phân loại"}
+                      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          <span>
+                            {post.createdAt
+                              ? formatDate(post.createdAt)
+                              : "N/A"}
+                          </span>
+                          <Eye className="w-4 h-4 ml-4 mr-1" />
+                          <span>
+                            {(
+                              post.viewCount ||
+                              post.views ||
+                              0
+                            ).toLocaleString()}{" "}
+                            lượt xem
+                          </span>
+                          <span className="ml-4 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs">
+                            {post.categories?.length > 0
+                              ? post.categories[0].name
+                              : "Chưa phân loại"}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          {post.title}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-3">
+                          {post.excerpt ||
+                            (post.content
+                              ? post.content
+                                  .replace(/<[^>]*>/g, "")
+                                  .substring(0, 150) + "..."
+                              : "Nội dung không có sẵn")}
+                        </p>
+                        <span className="text-blue-600 dark:text-blue-400 hover:underline">
+                          Đọc tiếp →
                         </span>
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-300 mb-3">
-                        {post.excerpt ||
-                          (post.content
-                            ? post.content
-                                .replace(/<[^>]*>/g, "")
-                                .substring(0, 150) + "..."
-                            : "Nội dung không có sẵn")}
-                      </p>
-                      <Link
-                        href={`/blog/${post.id}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Đọc tiếp →
-                      </Link>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="text-center py-8">
@@ -274,44 +282,44 @@ export default function HomePage() {
                   </div>
                 ) : latestNovels.length > 0 ? (
                   latestNovels.map((novel) => (
-                    <div
+                    <Link
                       key={novel.id}
-                      className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                      href={`/novels/${novel.id}`}
+                      className="block"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <Star className="w-4 h-4 mr-1 text-yellow-400" />
-                          <span>
-                            {novel.avgRating || novel.rating || 0} (
-                            {novel.viewCount || 0} lượt xem)
+                      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                            <Star className="w-4 h-4 mr-1 text-yellow-400" />
+                            <span>
+                              {novel.avgRating || novel.rating || 0} (
+                              {novel.viewCount || 0} lượt xem)
+                            </span>
+                          </div>
+                          <span className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
+                            {novel.genres?.length > 0
+                              ? novel.genres[0].name
+                              : "Chưa phân loại"}
                           </span>
                         </div>
-                        <span className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
-                          {novel.genres?.length > 0
-                            ? novel.genres[0].name
-                            : "Chưa phân loại"}
-                        </span>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          {novel.title}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-3">
+                          {novel.description
+                            ? novel.description.substring(0, 150) + "..."
+                            : "Mô tả không có sẵn"}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {novel.totalChapters || 0} chương
+                          </span>
+                          <span className="text-purple-600 dark:text-purple-400 hover:underline">
+                            Đọc ngay →
+                          </span>
+                        </div>
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        {novel.title}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-300 mb-3">
-                        {novel.description
-                          ? novel.description.substring(0, 150) + "..."
-                          : "Mô tả không có sẵn"}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {novel.totalChapters || 0} chương
-                        </span>
-                        <Link
-                          href={`/novels/${novel.id}`}
-                          className="text-purple-600 dark:text-purple-400 hover:underline"
-                        >
-                          Đọc ngay →
-                        </Link>
-                      </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <div className="text-center py-8">
@@ -327,24 +335,56 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Bắt đầu hành trình khám phá ngay hôm nay
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Đăng ký tài khoản để không bỏ lỡ những nội dung mới nhất và tham gia
-            cộng đồng độc giả
-          </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-          >
-            Đăng ký ngay
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Link>
-        </div>
-      </section>
+      {!isAuthenticated ? (
+        <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
+          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Bắt đầu hành trình khám phá ngay hôm nay
+            </h2>
+            <p className="text-xl text-blue-100 mb-8">
+              Đăng ký tài khoản để không bỏ lỡ những nội dung mới nhất và tham
+              gia cộng đồng độc giả
+            </p>
+            <Link
+              href="/register"
+              className="inline-flex items-center px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 hover:scale-105 hover:shadow-lg transition-all duration-300"
+            >
+              Đăng ký ngay
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <section className="py-20 bg-gradient-to-r from-green-600 to-blue-600">
+          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Chào mừng bạn quay trở lại!
+            </h2>
+            <p className="text-xl text-green-100 mb-8">
+              Tiếp tục hành trình sáng tạo và khám phá của bạn với cộng đồng
+              chúng tôi
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/my-posts"
+                className="inline-flex items-center px-6 py-3 bg-white text-green-600 rounded-lg font-semibold hover:bg-gray-100 hover:scale-105 hover:shadow-lg transition-all duration-300"
+              >
+                <PenTool className="w-5 h-5 mr-2" />
+                Bài viết của tôi
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+              <Link
+                href="/my-novels"
+                className="inline-flex items-center px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 hover:scale-105 hover:shadow-lg transition-all duration-300"
+              >
+                <BookOpen className="w-5 h-5 mr-2" />
+                Tiểu thuyết của tôi
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
