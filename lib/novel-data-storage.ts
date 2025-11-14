@@ -47,9 +47,30 @@ class NovelDataStorage {
         this.novels = parsed.novels || [];
         this.nextId = parsed.nextId || 1;
       } catch (error) {
-        // File doesn't exist, start with empty array
-        this.novels = [];
-        this.nextId = 1;
+        // File doesn't exist, create sample data
+        this.novels = [
+          {
+            id: 1,
+            title: "Truyện Thú Vị",
+            author_id: 1,
+            author: "Tác Giả A",
+            description: "Một câu chuyện đầy màu sắc và thú vị về cuộc sống.",
+            genre: "Viễn tưởng",
+            chapters: 2,
+            status: "ONGOING",
+            rating: 4.5,
+            reviews: 125,
+            views: 5000,
+            likes: 300,
+            lastUpdate: "2024-01-22T10:00:00Z",
+            cover: "/placeholder.svg",
+            tags: ["viễn tưởng", "phiêu lưu"],
+            publishDate: "2024-01-15T10:00:00Z",
+            totalWords: 30000,
+            averageChapterLength: 15000,
+          },
+        ];
+        this.nextId = 2;
         await this.saveToFile();
       }
     } catch (error) {

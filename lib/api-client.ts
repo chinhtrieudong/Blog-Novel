@@ -41,19 +41,19 @@ class ApiClient {
   private baseURL: string;
   private token: string | null = null;
 
-  constructor(baseURL: string = API_BASE_URL) {
-    // Use the provided baseURL, or fallback to current origin + /api, or just /api
+  constructor(baseURL?: string) {
+    // Always use port 8080 for API backend
     this.baseURL =
-      baseURL ||
-      (typeof window !== "undefined"
-        ? `${window.location.origin}/api`
-        : "/api");
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
     console.log("API Base URL:", this.baseURL);
     console.log("Environment API_BASE_URL:", API_BASE_URL);
+    console.log("Is client:", typeof window !== "undefined");
     this.loadToken();
 
-    // Test backend connectivity
-    this.testBackendConnection();
+    // Test backend connectivity only on client
+    if (typeof window !== "undefined") {
+      this.testBackendConnection();
+    }
   }
 
   private async testBackendConnection() {
@@ -90,6 +90,77 @@ class ApiClient {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       this.token = null;
+    }
+  }
+
+  private async publicRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    const config: RequestInit = {
+      headers: {
+        Accept: "application/json",
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    // Don't set Content-Type for FormData - browser will set it with boundary
+    if (!(options.body instanceof FormData)) {
+      config.headers = {
+        "Content-Type": "application/json",
+        ...config.headers,
+      };
+    }
+
+    // Note: No Authorization header added for public requests
+
+    try {
+      console.log("Making PUBLIC API request to:", url);
+      console.log("Request headers:", config.headers);
+      console.log("Request method:", config.method || "GET");
+      if (options.body instanceof FormData) {
+        console.log("Sending FormData:");
+        for (let [key, value] of options.body.entries()) {
+          console.log(key, value);
+        }
+      }
+
+      const response = await fetch(url, config);
+      console.log("Response status:", response.status);
+
+      // Check if response has content
+      const contentType = response.headers.get("content-type");
+      let data: any = null;
+
+      if (contentType && contentType.includes("application/json")) {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        }
+      }
+
+      if (!response.ok) {
+        const errorMessage =
+          data?.message || `API request failed with status ${response.status}`;
+        // For server-side rendering, don't throw auth errors - let caller handle gracefully
+        if (response.status === 401) {
+          console.log("Authentication required for API access:", errorMessage);
+          // Return empty/false response instead of throwing
+          return {
+            code: 401,
+            message: "Authentication required",
+            data: null,
+          } as any;
+        }
+        throw new Error(errorMessage);
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Public API request error:", error);
+      throw error;
     }
   }
 
@@ -566,10 +637,34 @@ class ApiClient {
     novelId: number,
     chapterId: number
   ): Promise<ApiResponse<void>> {
-    return this.request<void>(
+    return this.publicRequest<void>(
       `/novels/${novelId}/chapters/${chapterId}/views`,
       {
         method: "POST",
+      }
+    );
+  }
+
+  // Chapter Comment API
+  async getChapterComments(
+    novelId: number,
+    chapterId: number
+  ): Promise<ApiResponse<CommentResponse[]>> {
+    return this.request<CommentResponse[]>(
+      `/novels/${novelId}/chapters/${chapterId}/comments`
+    );
+  }
+
+  async createChapterComment(
+    novelId: number,
+    chapterId: number,
+    data: CommentRequest
+  ): Promise<ApiResponse<CommentResponse>> {
+    return this.request<CommentResponse>(
+      `/novels/${novelId}/chapters/${chapterId}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
       }
     );
   }
@@ -588,7 +683,7 @@ class ApiClient {
     if (params?.size) searchParams.append("size", params.size.toString());
 
     const query = searchParams.toString();
-    return this.request<PagedResponse<PostResponse>>(
+    return this.publicRequest<PagedResponse<PostResponse>>(
       `/posts${query ? `?${query}` : ""}`
     );
   }
@@ -608,7 +703,7 @@ class ApiClient {
   }
 
   async getPostById(id: number): Promise<ApiResponse<PostResponse>> {
-    return this.request<PostResponse>(`/posts/${id}`);
+    return this.publicRequest<PostResponse>(`/posts/${id}`);
   }
 
   async createPost(data: PostRequest): Promise<ApiResponse<PostResponse>> {
@@ -698,7 +793,13 @@ class ApiClient {
   }
 
   async incrementPostViews(id: number): Promise<ApiResponse<void>> {
-    return this.request<void>(`/posts/${id}/views`, {
+    return this.publicRequest<void>(`/posts/${id}/views`, {
+      method: "POST",
+    });
+  }
+
+  async incrementNovelViews(id: number): Promise<ApiResponse<void>> {
+    return this.publicRequest<void>(`/novels/${id}/views`, {
       method: "POST",
     });
   }
@@ -707,7 +808,7 @@ class ApiClient {
   async getPostComments(
     postId: number
   ): Promise<ApiResponse<CommentResponse[]>> {
-    return this.request<CommentResponse[]>(`/posts/${postId}/comments`);
+    return this.publicRequest<CommentResponse[]>(`/posts/${postId}/comments`);
   }
 
   async createPostComment(
@@ -890,7 +991,7 @@ class ApiClient {
 
   // Categories API
   async getCategories(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>("/categories");
+    return this.publicRequest<any[]>("/categories");
   }
 }
 
