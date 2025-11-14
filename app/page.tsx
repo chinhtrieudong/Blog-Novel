@@ -10,6 +10,11 @@ import {
   Calendar,
   Eye,
   Loader2,
+  Sparkles,
+  TrendingUp,
+  Award,
+  Heart,
+  Quote,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import apiClient from "@/lib/api-client";
@@ -61,37 +66,101 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-20 overflow-hidden">
+        {/* Floating Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute top-20 left-10 w-20 h-20 bg-blue-200 dark:bg-blue-800 rounded-full opacity-20 animate-bounce"
+            style={{ animationDelay: "0s", animationDuration: "3s" }}
+          ></div>
+          <div
+            className="absolute top-40 right-20 w-16 h-16 bg-purple-200 dark:bg-purple-800 rounded-full opacity-20 animate-bounce"
+            style={{ animationDelay: "1s", animationDuration: "4s" }}
+          ></div>
+          <div
+            className="absolute bottom-20 left-1/4 w-12 h-12 bg-pink-200 dark:bg-pink-800 rounded-full opacity-20 animate-bounce"
+            style={{ animationDelay: "2s", animationDuration: "3.5s" }}
+          ></div>
+          <div
+            className="absolute top-1/3 right-10 w-8 h-8 bg-green-200 dark:bg-green-800 rounded-full opacity-20 animate-bounce"
+            style={{ animationDelay: "0.5s", animationDuration: "4.5s" }}
+          ></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Chào mừng đến với
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {" "}
+            {/* Badge */}
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full text-sm font-medium text-blue-800 dark:text-blue-200 mb-6 animate-fade-in">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Nền tảng sáng tạo văn học
+            </div>
+
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 animate-fade-in-up">
+              Chào mừng đến với{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
                 Blog & Novel
               </span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+
+            <p
+              className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-fade-in-up"
+              style={{ animationDelay: "0.2s" }}
+            >
               Nơi chia sẻ những câu chuyện, suy nghĩ và những tác phẩm tiểu
               thuyết độc đáo. Khám phá thế giới văn chương qua góc nhìn cá nhân
               và những trải nghiệm thú vị.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+            {/* Stats */}
+            <div
+              className="flex justify-center gap-8 mb-10 animate-fade-in-up"
+              style={{ animationDelay: "0.4s" }}
+            >
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  10K+
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Bài viết
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  5K+
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Tiểu thuyết
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  50K+
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Độc giả
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up"
+              style={{ animationDelay: "0.6s" }}
+            >
               <Link
                 href="/blog"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 hover:shadow-lg transition-all duration-300"
+                className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 hover:scale-105 hover:shadow-2xl transition-all duration-300 transform"
               >
-                <PenTool className="w-5 h-5 mr-2" />
+                <PenTool className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                 Khám phá Blog
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
               <Link
                 href="/novels"
-                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 hover:scale-105 hover:shadow-lg transition-all duration-300"
+                className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 hover:scale-105 hover:shadow-2xl transition-all duration-300 transform"
               >
-                <BookOpen className="w-5 h-5 mr-2" />
+                <BookOpen className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                 Đọc Tiểu thuyết
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </div>
           </div>

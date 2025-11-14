@@ -9,6 +9,13 @@ import {
   Filter,
   TrendingUp,
   Loader2,
+  Sparkles,
+  Award,
+  Heart,
+  Clock,
+  Eye,
+  Crown,
+  Flame,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import apiClient from "@/lib/api-client";
@@ -134,22 +141,161 @@ export default function NovelsPage() {
     ),
   };
 
+  // Get featured novels (top 3 by rating)
+  const featuredNovels = novels
+    .sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0))
+    .slice(0, 3);
+
   return (
-    <div className="min-h-screen py-8" data-page-type="novel">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Thư Viện Tiểu Thuyết
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Khám phá những tác phẩm tiểu thuyết hấp dẫn với nhiều thể loại đa
-            dạng
-          </p>
+    <div className="min-h-screen" data-page-type="novel">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 py-16 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-purple-300 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-pink-300 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-indigo-300 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-12">
+            {/* Badge */}
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 rounded-full text-sm font-medium text-purple-800 dark:text-purple-200 mb-6 animate-fade-in">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Thế giới tưởng tượng
+            </div>
+
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 animate-fade-in-up">
+              Thư Viện{" "}
+              <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                Tiểu Thuyết
+              </span>
+            </h1>
+
+            <p
+              className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8 animate-fade-in-up"
+              style={{ animationDelay: "0.2s" }}
+            >
+              Khám phá những tác phẩm tiểu thuyết hấp dẫn với nhiều thể loại đa
+              dạng. Đắm chìm trong thế giới tưởng tượng và những câu chuyện
+              tuyệt vời.
+            </p>
+
+            {/* Stats */}
+            <div
+              className="flex justify-center gap-8 mb-10 animate-fade-in-up"
+              style={{ animationDelay: "0.4s" }}
+            >
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {novels.length}+
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Tiểu thuyết
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-pink-600 dark:text-pink-400">
+                  {genres.length - 1}+
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Thể loại
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                  24/7
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Cập nhật
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Novels */}
+      {!loading && !error && featuredNovels.length > 0 && (
+        <section className="py-16 bg-white dark:bg-gray-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center mb-8">
+              <Crown className="w-6 h-6 text-yellow-500 mr-3" />
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Tiểu thuyết nổi bật
+              </h2>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {featuredNovels.map((novel, index) => (
+                <Link
+                  key={novel.id}
+                  href={`/novels/${novel.id}`}
+                  className="block group"
+                >
+                  <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-500 cursor-pointer overflow-hidden">
+                    {/* Featured Badge */}
+                    <div className="relative">
+                      <div className="aspect-[3/4] bg-gradient-to-br from-purple-400 to-pink-500 relative overflow-hidden">
+                        <img
+                          src={novel.coverImage || "/placeholder.svg"}
+                          alt={novel.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                        <div className="absolute top-4 left-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+                          <Crown className="w-4 h-4 mr-1" />
+                          TOP #{index + 1}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                          <BookOpen className="w-3 h-3 mr-1" />
+                          {novel.genres?.[0]?.name || "Chưa phân loại"}
+                        </span>
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <Eye className="w-4 h-4 mr-1" />
+                          {(novel.totalViews || 0).toLocaleString()}
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300 line-clamp-2">
+                        {novel.title}
+                      </h3>
+
+                      <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                        {novel.description
+                          ? novel.description.substring(0, 120) + "..."
+                          : "Mô tả không có sẵn"}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <Users className="w-4 h-4 mr-1" />
+                          <span>{novel.author?.fullName || novel.author?.username || "Ẩn danh"}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <Star className="w-4 h-4 mr-1 text-yellow-400" />
+                          <span>{novel.avgRating?.toFixed(1) || "0.0"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* All Novels Section */}
+      <div className="py-16 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {stats.totalNovels}
@@ -404,7 +550,6 @@ export default function NovelsPage() {
             </button>
           </nav>
         </div>
-      </div>
     </div>
   );
 }
