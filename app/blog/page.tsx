@@ -236,72 +236,71 @@ export default function BlogPage() {
         {!isLoading && !error && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
-              <article
-                key={post.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
-              >
-                <div className="aspect-video bg-gray-200 dark:bg-gray-700">
-                  <img
-                    src={
-                      post.coverImageUrl ||
-                      post.coverImage ||
-                      "/placeholder.svg"
-                    }
-                    alt={post.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                      <Tag className="w-3 h-3 mr-1" />
-                      {post.categories?.length > 0
-                        ? post.categories[0].name
-                        : "Chưa phân loại"}
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {post.content ? calculateReadTime(post.content) : "N/A"}
-                    </span>
+              <Link key={post.id} href={`/blog/${post.id}`} className="block">
+                <article className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden">
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-700">
+                    <img
+                      src={
+                        post.coverImageUrl ||
+                        post.coverImage ||
+                        "/placeholder.svg"
+                      }
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
-                    {post.title}
-                  </h2>
-
-                  <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
-                    {post.excerpt ||
-                      (post.content
-                        ? stripHtmlTags(post.content).substring(0, 150) + "..."
-                        : "Nội dung không có sẵn")}
-                  </p>
-
-                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      <span>
-                        {post.status === "PUBLISHED"
-                          ? formatDate(post.updatedAt)
-                          : "Chưa xuất bản"}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                        <Tag className="w-3 h-3 mr-1" />
+                        {post.categories?.length > 0
+                          ? post.categories[0].name
+                          : "Chưa phân loại"}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {post.content ? calculateReadTime(post.content) : "N/A"}
                       </span>
                     </div>
-                    <div className="flex items-center">
-                      <Eye className="w-4 h-4 mr-1" />
-                      <span>
-                        {post.viewCount ? post.viewCount.toLocaleString() : "0"}{" "}
-                        lượt xem
-                      </span>
+
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
+                      {post.title}
+                    </h2>
+
+                    <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                      {post.excerpt ||
+                        (post.content
+                          ? stripHtmlTags(post.content).substring(0, 150) +
+                            "..."
+                          : "Nội dung không có sẵn")}
+                    </p>
+
+                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        <span>
+                          {post.status === "PUBLISHED"
+                            ? formatDate(post.updatedAt)
+                            : "Chưa xuất bản"}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Eye className="w-4 h-4 mr-1" />
+                        <span>
+                          {post.viewCount
+                            ? post.viewCount.toLocaleString()
+                            : "0"}{" "}
+                          lượt xem
+                        </span>
+                      </div>
                     </div>
+
+                    <span className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                      Đọc tiếp →
+                    </span>
                   </div>
-
-                  <Link
-                    href={`/blog/${post.id}`}
-                    className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                  >
-                    Đọc tiếp →
-                  </Link>
-                </div>
-              </article>
+                </article>
+              </Link>
             ))}
           </div>
         )}

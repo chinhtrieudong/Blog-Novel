@@ -11,6 +11,7 @@ import {
   Eye,
 } from "lucide-react";
 import apiClient from "@/lib/api-client";
+import Comments from "@/components/comments";
 
 export default async function NovelDetailPage({
   params,
@@ -18,6 +19,15 @@ export default async function NovelDetailPage({
   params: { id: string };
 }) {
   const novelId = parseInt((await params).id);
+
+  // Increment novel views (silence errors)
+  try {
+    await apiClient.incrementNovelViews(novelId);
+  } catch (error) {
+    // Silently fail view increment - not critical
+    console.log("Could not increment novel views:", error);
+  }
+
   const novelResponse = await apiClient.getNovelById(novelId);
 
   if (!novelResponse.data) {
@@ -51,7 +61,7 @@ export default async function NovelDetailPage({
     : [];
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8" data-page-type="novel">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-8">
@@ -73,7 +83,7 @@ export default async function NovelDetailPage({
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-64 h-80 flex-shrink-0">
                   <img
-                    src={novel.coverImageUrl || "/placeholder.svg"}
+                    src={novel.coverImage || "/placeholder.svg"}
                     alt={novel.title}
                     className="w-full h-full object-cover rounded-lg"
                   />
@@ -105,7 +115,7 @@ export default async function NovelDetailPage({
                     <div className="flex items-center">
                       <Star className="w-5 h-5 text-yellow-400 mr-1" />
                       <span className="text-gray-900 dark:text-white font-medium">
-                        {novel.rating}
+                        {novel.avgRating}
                       </span>
                       <span className="text-gray-600 dark:text-gray-400 ml-1">
                         (đánh giá)
@@ -217,7 +227,7 @@ export default async function NovelDetailPage({
                         <Calendar className="w-4 h-4 mr-1" />
                         <span>{chapter.createdAt}</span>
                         <Eye className="w-4 h-4 ml-4 mr-1" />
-                        <span>{chapter.views} lượt đọc</span>
+                        <span>{chapter.viewCount} lượt đọc</span>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
@@ -233,65 +243,7 @@ export default async function NovelDetailPage({
             </div>
 
             {/* Comments */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Bình luận ({comments.length})
-                </h2>
-              </div>
-
-              {/* Comment Form */}
-              <div className="mb-6">
-                <textarea
-                  placeholder="Viết bình luận của bạn..."
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                  rows={3}
-                />
-                <div className="flex justify-end mt-2">
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    Gửi bình luận
-                  </button>
-                </div>
-              </div>
-
-              {/* Comments List */}
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex space-x-3">
-                    <img
-                      src={comment.author?.avatarUrl || "/placeholder.svg"}
-                      alt={comment.author?.username || "User"}
-                      className="w-10 h-10 rounded-full"
-                    />
-                    <div className="flex-1">
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            {comment.author?.username || "Anonymous"}
-                          </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {comment.createdAt}
-                          </span>
-                        </div>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          {comment.content}
-                        </p>
-                      </div>
-                      <div className="flex items-center mt-2 space-x-4">
-                        <button className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400">
-                          <Heart className="w-4 h-4 mr-1" />
-                          {comment.likes}
-                        </button>
-                        <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400">
-                          Trả lời
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Comments novelId={novelId} initialComments={comments} />
           </div>
 
           {/* Sidebar */}
@@ -337,7 +289,7 @@ export default async function NovelDetailPage({
                     className="flex space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
                   >
                     <img
-                      src={relatedNovel.coverImageUrl || "/placeholder.svg"}
+                      src={relatedNovel.coverImage || "/placeholder.svg"}
                       alt={relatedNovel.title}
                       className="w-12 h-16 object-cover rounded"
                     />
@@ -347,7 +299,7 @@ export default async function NovelDetailPage({
                       </h4>
                       <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
                         <Star className="w-3 h-3 mr-1 text-yellow-400" />
-                        <span>{relatedNovel.rating}</span>
+                        <span>{relatedNovel.avgRating}</span>
                       </div>
                     </div>
                   </Link>

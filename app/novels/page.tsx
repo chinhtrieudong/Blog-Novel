@@ -93,7 +93,7 @@ export default function NovelsPage() {
         genres: [], // Not available in search results
         status: "ONGOING", // Default status
         coverImage: item.coverImage,
-        viewCount: 0, // Not available in search results
+        totalViews: 0, // Not available in search results
         avgRating: item.avgRating || 0,
         totalChapters: 0, // Not available in search results
         createdAt: new Date().toISOString(),
@@ -128,11 +128,14 @@ export default function NovelsPage() {
     completedNovels: displayedNovels.filter((n) => n.status === "COMPLETED")
       .length,
     ongoingNovels: displayedNovels.filter((n) => n.status === "ONGOING").length,
-    totalViews: displayedNovels.reduce((sum, n) => sum + (n.viewCount || 0), 0),
+    totalViews: displayedNovels.reduce(
+      (sum, n) => sum + (n.totalViews || 0),
+      0
+    ),
   };
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8" data-page-type="novel">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -201,13 +204,30 @@ export default function NovelsPage() {
             >
               Tìm kiếm
             </button>
-            <select className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500">
-              {sortOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            <div className="relative inline-block">
+              <select
+                className="appearance-none px-4 pr-10 py-3 border border-gray-300 dark:border-gray-600
+               rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+               focus:ring-2 focus:ring-purple-500 w-full"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+
+              {/* Icon mũi tên custom */}
+              <svg
+                className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
             <button className="flex items-center px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
               <Filter className="w-5 h-5 mr-2" />
               Bộ lọc
@@ -235,83 +255,79 @@ export default function NovelsPage() {
         {/* Novels Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {displayedNovels.map((novel) => (
-            <div
-              key={novel.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
-            >
-              <div className="flex">
-                <div className="w-32 h-48 flex-shrink-0">
-                  <img
-                    src={novel.coverImage || "/placeholder.svg"}
-                    alt={novel.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="flex-1 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        novel.status === "COMPLETED"
-                          ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                          : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
-                      }`}
-                    >
-                      {novel.status === "COMPLETED"
-                        ? "Hoàn thành"
-                        : novel.status === "ONGOING"
-                        ? "Đang cập nhật"
-                        : novel.status === "DRAFT"
-                        ? "Nháp"
-                        : novel.status}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Cập nhật gần đây
-                    </span>
+            <Link key={novel.id} href={`/novels/${novel.id}`} className="block">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden">
+                <div className="flex">
+                  <div className="w-32 h-48 flex-shrink-0">
+                    <img
+                      src={novel.coverImage || "/placeholder.svg"}
+                      alt={novel.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
-                    {novel.title}
-                  </h3>
+                  <div className="flex-1 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          novel.status === "COMPLETED"
+                            ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                            : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                        }`}
+                      >
+                        {novel.status === "COMPLETED"
+                          ? "Hoàn thành"
+                          : novel.status === "ONGOING"
+                          ? "Đang cập nhật"
+                          : novel.status === "DRAFT"
+                          ? "Nháp"
+                          : novel.status}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Cập nhật gần đây
+                      </span>
+                    </div>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    {novel.author.fullName || novel.author.username}
-                  </p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
+                      {novel.title}
+                    </h3>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                    {novel.description}
-                  </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      {novel.author.fullName || novel.author.username}
+                    </p>
 
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
-                      {novel.genres[0]?.name || "Chưa phân loại"}
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                      {novel.description}
+                    </p>
+
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
+                        {novel.genres[0]?.name || "Chưa phân loại"}
+                      </span>
+                      <div className="flex items-center">
+                        <BookOpen className="w-3 h-3 mr-1" />
+                        <span>{novel.totalChapters || 0} chương</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      <div className="flex items-center">
+                        <Star className="w-3 h-3 mr-1 text-yellow-400" />
+                        <span>{novel.avgRating || 0} (Chưa có đánh giá)</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Users className="w-3 h-3 mr-1" />
+                        <span>{(novel.totalViews || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <span className="inline-flex items-center text-purple-600 dark:text-purple-400 hover:underline font-medium text-sm">
+                      Đọc ngay →
                     </span>
-                    <div className="flex items-center">
-                      <BookOpen className="w-3 h-3 mr-1" />
-                      <span>Chưa có chương</span>
-                    </div>
                   </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    <div className="flex items-center">
-                      <Star className="w-3 h-3 mr-1 text-yellow-400" />
-                      <span>{novel.avgRating || 0} (Chưa có đánh giá)</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="w-3 h-3 mr-1" />
-                      <span>{(novel.viewCount || 0).toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/novels/${novel.id}`}
-                    className="inline-flex items-center text-purple-600 dark:text-purple-400 hover:underline font-medium text-sm"
-                  >
-                    Đọc ngay →
-                  </Link>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -328,7 +344,7 @@ export default function NovelsPage() {
             {novels.slice(0, 4).map((novel, index) => (
               <div
                 key={novel.id}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm"
+                className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer"
               >
                 <div className="flex items-center mb-3">
                   <div
@@ -350,7 +366,7 @@ export default function NovelsPage() {
                     </h4>
                     <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                       <Star className="w-3 h-3 mr-1 text-yellow-400" />
-                      <span>{novel.rating}</span>
+                      <span>{novel.avgRating}</span>
                     </div>
                   </div>
                 </div>

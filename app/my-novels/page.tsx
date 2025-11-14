@@ -161,7 +161,7 @@ export default function MyNovelsPage() {
                   >
                     <div className="aspect-video bg-gray-200 dark:bg-gray-700">
                       <img
-                        src={novel.coverImageUrl || "/placeholder.svg"}
+                        src={novel.coverImage || "/placeholder.svg"}
                         alt={novel.title}
                         className="w-full h-full object-cover"
                       />
@@ -199,7 +199,7 @@ export default function MyNovelsPage() {
 
                       <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                         <span>{novel.totalChapters || 0} chương</span>
-                        <span>★ {novel.rating?.toFixed(1) || "0.0"}</span>
+                        <span>★ {novel.avgRating?.toFixed(1) || "0.0"}</span>
                       </div>
 
                       <div className="flex space-x-2">
@@ -209,6 +209,13 @@ export default function MyNovelsPage() {
                         >
                           <BookOpen className="w-4 h-4 mr-1" />
                           Xem
+                        </Link>
+                        <Link
+                          href={`/my-novels/${novel.id}/chapters`}
+                          className="flex-1 flex items-center justify-center px-3 py-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Chương
                         </Link>
                         <Link
                           href={`/novels/edit/${novel.id}`}

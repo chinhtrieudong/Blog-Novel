@@ -738,8 +738,16 @@ export default function AdminPage() {
                             <Link
                               href={`/novels/${novel.id}`}
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+                              title="Xem tiểu thuyết"
                             >
                               <Eye className="w-4 h-4" />
+                            </Link>
+                            <Link
+                              href={`/admin/novels/${novel.id}/chapters`}
+                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                              title="Quản lý chương"
+                            >
+                              <BookOpen className="w-4 h-4" />
                             </Link>
                             <button
                               onClick={() =>
@@ -750,6 +758,7 @@ export default function AdminPage() {
                                 )
                               }
                               className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                              title="Xóa tiểu thuyết"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
