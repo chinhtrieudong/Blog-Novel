@@ -351,3 +351,17 @@ body:has([data-page-type="novel"])::after {
   animation: gradient-x 3s ease infinite;
   background-size: 200% 200%;
 }
+
+/* Shine animation for buttons */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+.animate-shine {
+  animation: shine 0.8s ease-in-out;
+}

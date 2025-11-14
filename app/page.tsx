@@ -148,20 +148,189 @@ export default function HomePage() {
             >
               <Link
                 href="/blog"
-                className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 hover:scale-105 hover:shadow-2xl transition-all duration-300 transform"
+                className="group relative inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform overflow-hidden"
               >
-                <PenTool className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                Khám phá Blog
-                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
+                {/* Ripple effect */}
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-xl"></div>
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 transform -skew-x-12 group-hover:animate-shine transition-all duration-700"></div>
+
+                <PenTool className="w-5 h-5 mr-3 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 relative z-10" />
+                <span className="relative z-10">Khám phá Blog</span>
+                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 group-hover:scale-110 transition-all duration-300 relative z-10" />
+
+                {/* Floating particles */}
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity duration-300"></div>
+                <div
+                  className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity duration-300"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
               </Link>
               <Link
                 href="/novels"
-                className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 hover:scale-105 hover:shadow-2xl transition-all duration-300 transform"
+                className="group relative inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform overflow-hidden"
               >
-                <BookOpen className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                Đọc Tiểu thuyết
-                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
+                {/* Ripple effect */}
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-xl"></div>
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 transform -skew-x-12 group-hover:animate-shine transition-all duration-700"></div>
+
+                <BookOpen className="w-5 h-5 mr-3 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 relative z-10" />
+                <span className="relative z-10">Đọc Tiểu thuyết</span>
+                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 group-hover:scale-110 transition-all duration-300 relative z-10" />
+
+                {/* Floating particles */}
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity duration-300"></div>
+                <div
+                  className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity duration-300"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-16 bg-white dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Người dùng nói gì về chúng tôi
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Hàng nghìn độc giả đã tin tưởng và lựa chọn nền tảng của chúng tôi
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 text-center animate-fade-in-up">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">A</span>
+                </div>
+              </div>
+              <blockquote className="text-gray-700 dark:text-gray-300 mb-4 italic">
+                "Tôi đã tìm thấy rất nhiều tiểu thuyết hay trên nền tảng này.
+                Giao diện đẹp, dễ sử dụng và có nhiều thể loại đa dạng."
+              </blockquote>
+              <div className="flex justify-center mb-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="w-5 h-5 text-yellow-400 fill-current"
+                  />
+                ))}
+              </div>
+              <cite className="text-gray-900 dark:text-white font-semibold">
+                Anh Minh
+              </cite>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Độc giả thân thiết
+              </p>
+            </div>
+
+            <div
+              className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 text-center animate-fade-in-up"
+              style={{ animationDelay: "0.2s" }}
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">T</span>
+                </div>
+              </div>
+              <blockquote className="text-gray-700 dark:text-gray-300 mb-4 italic">
+                "Là một tác giả, tôi rất hài lòng với công cụ quản lý truyện và
+                tương tác với độc giả. Rất chuyên nghiệp!"
+              </blockquote>
+              <div className="flex justify-center mb-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="w-5 h-5 text-yellow-400 fill-current"
+                  />
+                ))}
+              </div>
+              <cite className="text-gray-900 dark:text-white font-semibold">
+                Thu Hà
+              </cite>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Tác giả tiểu thuyết
+              </p>
+            </div>
+
+            <div
+              className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 text-center animate-fade-in-up"
+              style={{ animationDelay: "0.4s" }}
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">L</span>
+                </div>
+              </div>
+              <blockquote className="text-gray-700 dark:text-gray-300 mb-4 italic">
+                "Blog cá nhân của tôi đã thu hút được rất nhiều người đọc nhờ
+                giao diện đẹp và tính năng chia sẻ tiện lợi."
+              </blockquote>
+              <div className="flex justify-center mb-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="w-5 h-5 text-yellow-400 fill-current"
+                  />
+                ))}
+              </div>
+              <cite className="text-gray-900 dark:text-white font-semibold">
+                Linh Chi
+              </cite>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Blogger
+              </p>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="mt-16 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div className="animate-fade-in-up">
+                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                  10K+
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Độc giả hoạt động
+                </div>
+              </div>
+              <div
+                className="animate-fade-in-up"
+                style={{ animationDelay: "0.1s" }}
+              >
+                <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
+                  5K+
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Tiểu thuyết
+                </div>
+              </div>
+              <div
+                className="animate-fade-in-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">
+                  2K+
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Bài viết blog
+                </div>
+              </div>
+              <div
+                className="animate-fade-in-up"
+                style={{ animationDelay: "0.3s" }}
+              >
+                <div className="text-4xl font-bold text-orange-600 dark:text-orange-400 mb-2">
+                  500+
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">Tác giả</div>
+              </div>
             </div>
           </div>
         </div>
@@ -180,43 +349,107 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <PenTool className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 hover:shadow-2xl hover:scale-105 hover:-translate-y-3 transition-all duration-500 cursor-pointer border border-blue-200 dark:border-blue-800 relative overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 right-4 w-8 h-8 bg-blue-300 rounded-full"></div>
+                <div className="absolute bottom-4 left-4 w-6 h-6 bg-blue-400 rounded-full"></div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Blog Cá Nhân
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Chia sẻ những suy nghĩ, trải nghiệm và kiến thức qua các bài
-                viết blog chất lượng cao
-              </p>
+
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl group-hover:rotate-12 transition-all duration-500">
+                  <PenTool className="w-10 h-10 text-white group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                  Blog Cá Nhân
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
+                  Chia sẻ những suy nghĩ, trải nghiệm và kiến thức qua các bài
+                  viết blog chất lượng cao với công cụ soạn thảo hiện đại
+                </p>
+                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className="flex justify-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                    <div
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.4s" }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer">
-              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 hover:shadow-2xl hover:scale-105 hover:-translate-y-3 transition-all duration-500 cursor-pointer border border-purple-200 dark:border-purple-800 relative overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-6 left-6 w-10 h-10 bg-purple-300 rounded-full"></div>
+                <div className="absolute bottom-6 right-6 w-8 h-8 bg-purple-400 rounded-full"></div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Tiểu Thuyết Nhiều Chương
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Thưởng thức những tác phẩm tiểu thuyết dài tập với cốt truyện
-                hấp dẫn và nhân vật sống động
-              </p>
+
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl group-hover:rotate-12 transition-all duration-500">
+                  <BookOpen className="w-10 h-10 text-white group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">
+                  Tiểu Thuyết Nhiều Chương
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
+                  Thưởng thức những tác phẩm tiểu thuyết dài tập với cốt truyện
+                  hấp dẫn, nhân vật sống động và hệ thống theo dõi tiến độ
+                </p>
+                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className="flex justify-center space-x-2">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                    <div
+                      className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.4s" }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="text-center p-6 rounded-xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 hover:shadow-2xl hover:scale-105 hover:-translate-y-3 transition-all duration-500 cursor-pointer border border-green-200 dark:border-green-800 relative overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+                <div className="absolute top-4 left-8 w-6 h-6 bg-green-300 rounded-full"></div>
+                <div className="absolute bottom-8 right-4 w-8 h-8 bg-green-400 rounded-full"></div>
+                <div className="absolute top-8 right-8 w-4 h-4 bg-green-500 rounded-full"></div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Cộng Đồng Độc Giả
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Kết nối với những người yêu thích văn chương và chia sẻ cảm nhận
-                về các tác phẩm
-              </p>
+
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl group-hover:rotate-12 transition-all duration-500">
+                  <Users className="w-10 h-10 text-white group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-300">
+                  Cộng Đồng Độc Giả
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
+                  Kết nối với những người yêu thích văn chương, chia sẻ cảm nhận
+                  và tham gia thảo luận về các tác phẩm yêu thích
+                </p>
+                <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className="flex justify-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <div
+                      className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-green-600 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.4s" }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
