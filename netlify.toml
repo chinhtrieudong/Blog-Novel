@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  NEXT_PUBLIC_API_BASE_URL = "https://blog-novel-be.onrender.com/api"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
