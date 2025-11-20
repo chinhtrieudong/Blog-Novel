@@ -1,22 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import userDataStorage from "@/lib/user-data-storage";
 import authorDataStorage from "@/lib/author-data-storage";
-import { AuthorResponse, AuthorRequest } from "@/types/api";
+import { UserResponse, AuthorResponse, AuthorRequest } from "@/types/api";
 
 export async function GET(request: NextRequest) {
   try {
-    const authors = await authorDataStorage.getAllAuthors();
+    const users = await userDataStorage.getAllUsers();
 
-    const authorResponses: AuthorResponse[] = authors.map((author) => ({
-      id: author.id,
-      name: author.name,
-      bio: author.bio,
-      avatarUrl: author.avatarUrl,
+    const userResponses: UserResponse[] = users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName || "",
+      bio: undefined, // Authors don't have bio in user system, set to undefined as per example
+      avatarUrl: undefined, // No avatarUrl in user system, set to undefined as per example
+      role: user.role,
+      status: user.status,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     }));
 
     return NextResponse.json({
-      code: 200,
-      message: "All authors retrieved successfully",
-      data: authorResponses,
+      data: userResponses,
     });
   } catch (error) {
     console.error("Get authors error:", error);

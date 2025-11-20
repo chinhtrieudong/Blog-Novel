@@ -17,7 +17,69 @@ interface StatusChangeModalProps {
   currentStatus: string;
   title: string;
   isLoading?: boolean;
+  type?: "post" | "novel";
 }
+
+// Default status options for posts
+const postStatusOptions = [
+  {
+    value: "DRAFT",
+    label: "Nháp",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  },
+  {
+    value: "PENDING_REVIEW",
+    label: "Chờ duyệt",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  },
+  {
+    value: "PUBLISHED",
+    label: "Đã xuất bản",
+    color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  },
+  {
+    value: "REJECTED",
+    label: "Đã từ chối",
+    color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  },
+];
+
+// Status options for novels
+const novelStatusOptions = [
+  {
+    value: "DRAFT",
+    label: "Nháp",
+    color:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  },
+  {
+    value: "ONGOING",
+    label: "Đang ra mắt",
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  },
+  {
+    value: "COMPLETED",
+    label: "Hoàn thành",
+    color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  },
+  {
+    value: "HIATUS",
+    label: "Tạm dừng",
+    color:
+      "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  },
+  {
+    value: "CANCELLED",
+    label: "Đã hủy",
+    color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  },
+  {
+    value: "DROPPED",
+    label: "Đã dừng",
+    color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  },
+];
 
 export function StatusChangeModal({
   isOpen,
@@ -26,63 +88,115 @@ export function StatusChangeModal({
   currentStatus,
   title,
   isLoading = false,
+  type = "post", // default to post
 }: StatusChangeModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
+  // Choose status options based on type
+  const statusOptions =
+    type === "novel" ? novelStatusOptions : postStatusOptions;
 
-  const statusOptions = [
-    {
-      value: "DRAFT",
-      label: "Nháp",
-      color:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    },
-    {
-      value: "PENDING",
-      label: "Chờ duyệt",
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    },
-    {
-      value: "PUBLISHED",
-      label: "Đã xuất bản",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    },
-    {
-      value: "REJECTED",
-      label: "Đã từ chối",
-      color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-    },
-  ];
+  // Map Vietnamese display text back to enum values for novels
+  const mapStatusToValue = (displayStatus: string): string => {
+    if (type === "post") {
+      // For posts, currentStatus should already be enum (DRAFT, PUBLISHED, etc.)
+      return displayStatus;
+    } else {
+      // For novels, currentStatus might be Vietnamese text, map it back
+      switch (displayStatus) {
+        case "Nháp":
+          return "DRAFT";
+        case "Đang ra mắt":
+          return "ONGOING";
+        case "Hoàn thành":
+          return "COMPLETED";
+        case "Tạm dừng":
+          return "HIATUS";
+        case "Đã hủy":
+          return "CANCELLED";
+        case "Đã dừng":
+          return "DROPPED";
+        default:
+          return displayStatus; // Default to what's passed
+      }
+    }
+  };
+
+  // Get the current status as enum value for finding the option
+  const enumStatus = mapStatusToValue(currentStatus);
+
+  // Initialize selectedStatus with the enum value
+  const [selectedStatus, setSelectedStatus] = useState(enumStatus);
 
   const handleConfirm = () => {
     onConfirm(selectedStatus);
   };
 
   const handleClose = () => {
-    setSelectedStatus(currentStatus); // Reset to current status
+    setSelectedStatus(enumStatus); // Reset to current status enum
     onClose();
+  };
+
+  // Get description based on status value and type
+  const getStatusDescription = (statusValue: string) => {
+    if (type === "novel") {
+      switch (statusValue) {
+        case "DRAFT":
+          return "Tiểu thuyết đang được soạn thảo";
+        case "ONGOING":
+          return "Đang được cập nhật đều đặn";
+        case "COMPLETED":
+          return "Đã hoàn thành toàn bộ";
+        case "HIATUS":
+          return "Tạm ngưng cập nhật";
+        case "CANCELLED":
+          return "Đã bị hủy bỏ";
+        case "DROPPED":
+          return "Bị bỏ dở không hoàn thành";
+        default:
+          return "";
+      }
+    } else {
+      // post descriptions
+      switch (statusValue) {
+        case "DRAFT":
+          return "Bài viết đang được chỉnh sửa";
+        case "PENDING_REVIEW":
+          return "Chờ admin duyệt";
+        case "PUBLISHED":
+          return "Công khai cho mọi người";
+        case "REJECTED":
+          return "Bị từ chối xuất bản";
+        default:
+          return "";
+      }
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Thay đổi trạng thái bài viết</DialogTitle>
+          <DialogTitle>
+            Thay đổi trạng thái {type === "novel" ? "tiểu thuyết" : "bài viết"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Bài viết: <span className="font-medium">{title}</span>
+              {type === "novel" ? "Tiểu thuyết" : "Bài viết"}:{" "}
+              <span className="font-medium">{title}</span>
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Trạng thái hiện tại:{" "}
               <Badge
                 className={
-                  statusOptions.find((s) => s.value === currentStatus)?.color
+                  statusOptions.find((s) => s.value === enumStatus)?.color ||
+                  "bg-gray-100 text-gray-800"
                 }
               >
-                {statusOptions.find((s) => s.value === currentStatus)?.label}
+                {statusOptions.find((s) => s.value === enumStatus)?.label ||
+                  currentStatus ||
+                  "Unknown"}
               </Badge>
             </p>
           </div>
@@ -107,10 +221,7 @@ export function StatusChangeModal({
                     {status.label}
                   </Badge>
                   <div className="text-xs text-gray-600 dark:text-gray-400">
-                    {status.value === "DRAFT" && "Bài viết đang được chỉnh sửa"}
-                    {status.value === "PENDING" && "Chờ admin duyệt"}
-                    {status.value === "PUBLISHED" && "Công khai cho mọi người"}
-                    {status.value === "REJECTED" && "Đã từ chối xuất bản"}
+                    {getStatusDescription(status.value)}
                   </div>
                 </button>
               ))}

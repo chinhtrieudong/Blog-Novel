@@ -69,6 +69,52 @@ export default async function BlogDetailPage({
     notFound();
   }
 
+  // Helper function to decode common HTML entities (for server-side compatibility)
+  const decodeHtmlEntities = (text: string) => {
+    // Simple regex-based decoding for common Vietnamese entities
+    return text
+      .replace(/&aacute;/g, "á")
+      .replace(/&agrave;/g, "à")
+      .replace(/&acirc;/g, "â")
+      .replace(/&atilde;/g, "ã")
+      .replace(/&eacute;/g, "é")
+      .replace(/&egrave;/g, "è")
+      .replace(/&ecirc;/g, "ê")
+      .replace(/&iacute;/g, "í")
+      .replace(/&oacute;/g, "ó")
+      .replace(/&ograve;/g, "ò")
+      .replace(/&ocirc;/g, "ô")
+      .replace(/&otilde;/g, "õ")
+      .replace(/&uacute;/g, "ú")
+      .replace(/&ugrave;/g, "ù")
+      .replace(/&ucirc;/g, "û")
+      .replace(/&yacute;/g, "ý")
+      .replace(/&ygrave;/g, "ỳ")
+      .replace(/&Aacute;/g, "Á")
+      .replace(/&Agrave;/g, "À")
+      .replace(/&Acirc;/g, "Â")
+      .replace(/&Atilde;/g, "Ã")
+      .replace(/&Eacute;/g, "É")
+      .replace(/&Egrave;/g, "È")
+      .replace(/&Ecirc;/g, "Ê")
+      .replace(/&Iacute;/g, "Í")
+      .replace(/&Oacute;/g, "Ó")
+      .replace(/&Ograve;/g, "Ò")
+      .replace(/&Ocirc;/g, "Ô")
+      .replace(/&Otilde;/g, "Õ")
+      .replace(/&Uacute;/g, "Ú")
+      .replace(/&Ugrave;/g, "Ù")
+      .replace(/&Ucirc;/g, "Û")
+      .replace(/&Yacute;/g, "Ý")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, '"')
+      .replace(/'/g, "'")
+      .replace(/&#39;/g, "'");
+  };
+
   // Map to expected structure
   const post = {
     id: postData.id,
@@ -240,9 +286,12 @@ export default async function BlogDetailPage({
                   </span>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                     {relatedPost.title}
+                    test
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                    {relatedPost.excerpt || relatedPost.title}
+                    {decodeHtmlEntities(
+                      relatedPost.excerpt || relatedPost.title
+                    )}
                   </p>
                   <Link
                     href={`/blog/${relatedPost.id}`}

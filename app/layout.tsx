@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import Navigation from "@/components/navigation";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
             <main className="min-h-screen bg-white dark:bg-gray-900 transition-colors">
               {children}
             </main>
+            <Toaster />
           </AuthProvider>
         </ThemeProvider>
       </body>

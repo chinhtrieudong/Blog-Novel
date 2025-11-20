@@ -173,7 +173,7 @@ export default function AuthorsAdminPage() {
                         ) : (
                           <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                              {author.name.charAt(0).toUpperCase()}
+                              {(author.name || "A").charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}

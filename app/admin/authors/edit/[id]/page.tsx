@@ -13,6 +13,8 @@ export default function EditAuthorPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -49,6 +51,28 @@ export default function EditAuthorPage() {
     fetchAuthor();
   }, [authorId]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      // Clear URL input when file is selected
+      setAvatarUrl("");
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+    }
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAvatarUrl(e.target.value);
+    // Clear file when URL is entered
+    if (e.target.value.trim()) {
+      setAvatarFile(null);
+      setAvatarPreview("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -66,14 +90,33 @@ export default function EditAuthorPage() {
     setError("");
 
     try {
-      const authorData = {
-        name: name.trim(),
-        bio: bio.trim() || undefined,
-        avatarUrl: avatarUrl.trim() || undefined,
-      };
+      let response;
 
-      const response = await apiClient.updateAuthor(authorId, authorData);
+      if (avatarFile) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        formData.append("name", name.trim());
+        if (bio.trim()) formData.append("bio", bio.trim());
+        formData.append("avatarImage", avatarFile);
+
+        response = await apiClient.updateAuthor(authorId, formData);
+      } else {
+        // Use regular object for URL-based avatar
+        const authorData = {
+          name: name.trim(),
+          bio: bio.trim() || undefined,
+          avatarUrl: avatarUrl.trim() || undefined,
+        };
+
+        response = await apiClient.updateAuthor(authorId, authorData);
+      }
+
       console.log("Author updated:", response.data);
+
+      // Clean up object URL if it was created
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
 
       // Redirect to authors list
       router.push("/admin/authors");
@@ -204,38 +247,72 @@ export default function EditAuthorPage() {
               </p>
             </div>
 
-            {/* Avatar URL */}
+            {/* Avatar Section */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL ảnh đại diện
+                Ảnh đại diện
               </label>
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="https://example.com/avatar.jpg"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Link ảnh đại diện của tác giả (tùy chọn)
-              </p>
+
+              {/* File Upload */}
+              <div className="mb-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Chọn file ảnh để upload (JPG, PNG, GIF)
+                </p>
+              </div>
+
+              {/* OR separator */}
+              <div className="relative my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                    Hoặc
+                  </span>
+                </div>
+              </div>
+
+              {/* URL Input */}
+              <div>
+                <input
+                  type="url"
+                  value={avatarUrl}
+                  onChange={handleUrlChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="https://example.com/avatar.jpg"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Nhập link ảnh đại diện (tùy chọn)
+                </p>
+              </div>
             </div>
 
             {/* Avatar Preview */}
-            {avatarUrl && (
+            {(avatarUrl || avatarPreview) && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Xem trước ảnh đại diện
                 </label>
                 <div className="inline-block">
                   <img
-                    src={avatarUrl}
+                    src={avatarPreview || avatarUrl}
                     alt="Avatar preview"
                     className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
                     }}
                   />
+                  {avatarFile && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      File sẽ được upload: {avatarFile.name}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

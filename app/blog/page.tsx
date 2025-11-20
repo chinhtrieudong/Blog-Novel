@@ -166,6 +166,12 @@ export default function BlogPage() {
     return html.replace(/<[^>]*>/g, "");
   };
 
+  const decodeHtmlEntities = (text: string) => {
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = text;
+    return textarea.value;
+  };
+
   // Get featured posts (top 3 by view count)
   const featuredPosts = posts
     .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
@@ -348,11 +354,13 @@ export default function BlogPage() {
                       </h2>
 
                       <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
-                        {post.excerpt ||
-                          (post.content
-                            ? stripHtmlTags(post.content).substring(0, 150) +
-                              "..."
-                            : "Nội dung không có sẵn")}
+                        {post.excerpt
+                          ? decodeHtmlEntities(post.excerpt)
+                          : post.content
+                          ? stripHtmlTags(
+                              decodeHtmlEntities(post.content)
+                            ).substring(0, 150) + "..."
+                          : "Nội dung không có sẵn"}
                       </p>
 
                       <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">

@@ -4,8 +4,7 @@ import apiClient from "./api-client";
 // Test API client import and basic functionality
 export async function testApiIntegration() {
   try {
-    console.log("Testing API client import...");
-    console.log("API client imported successfully:", typeof apiClient);
+    // Removed debugging logs
 
     // Test that all methods exist
     const methods = [

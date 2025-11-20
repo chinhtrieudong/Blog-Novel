@@ -250,16 +250,81 @@ export default function AdminPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleEditSubmit = (formData: {
+  const handleEditSubmit = async (formData: {
     name: string;
     email: string;
     role: string;
     status: string;
   }) => {
-    console.log("Updating user:", selectedUser?.id, formData);
-    // Here you would implement the actual update logic
-    setIsEditModalOpen(false);
-    setSelectedUser(null);
+    if (!selectedUser?.id) {
+      toast({
+        title: "❌ Lỗi",
+        description: "Không thể xác định người dùng cần cập nhật.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Map Vietnamese display values to backend enum values
+      const roleMap: { [key: string]: string } = {
+        "Độc giả": "USER",
+        "Tác giả": "AUTHOR",
+        "Quản trị viên": "ADMIN",
+      };
+
+      const statusMap: { [key: string]: string } = {
+        "Hoạt động": "ACTIVE",
+        "Tạm khóa": "LOCKED",
+        Cấm: "BANNED",
+      };
+
+      const updateData = {
+        username: selectedUser.username, // Keep existing username
+        fullName: formData.name,
+        email: formData.email,
+        role: roleMap[formData.role] || formData.role,
+        status: statusMap[formData.status] || formData.status,
+      };
+
+      const response = await apiClient.updateUser(selectedUser.id, updateData);
+
+      // Refresh users data
+      const token = localStorage.getItem("accessToken");
+      const usersResponse = await fetch(
+        "http://localhost:8080/api/users?page=0&size=5",
+        {
+          headers: {
+            Accept: "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
+      );
+
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        if (usersData.code === 200 && Array.isArray(usersData.data)) {
+          setUsers(usersData.data);
+        }
+      }
+
+      setIsEditModalOpen(false);
+      setSelectedUser(null);
+
+      toast({
+        title: "✅ Thành công",
+        description: "Thông tin người dùng đã được cập nhật.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast({
+        title: "❌ Lỗi",
+        description:
+          "Không thể cập nhật thông tin người dùng. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Status management handlers

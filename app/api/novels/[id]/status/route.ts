@@ -36,7 +36,7 @@ export async function PUT(
     const newStatus = searchParams.get("status");
 
     // Validate status
-    const validStatuses = ["DRAFT", "PENDING", "PUBLISHED", "REJECTED"];
+    const validStatuses = ["DRAFT", "PENDING_REVIEW", "PUBLISHED", "REJECTED"];
     if (!newStatus || !validStatuses.includes(newStatus)) {
       return NextResponse.json(
         {

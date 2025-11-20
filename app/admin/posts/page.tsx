@@ -91,7 +91,7 @@ export default function AdminPostsPage() {
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_API_BASE_URL || ""
-        }/api/posts/${postId}/status?status=${newStatus}`,
+        }/posts/${postId}/status?status=${newStatus}`,
         {
           method: "PUT",
           headers: {
@@ -120,7 +120,7 @@ export default function AdminPostsPage() {
             Đã xuất bản
           </span>
         );
-      case "PENDING":
+      case "PENDING_REVIEW":
         return (
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
             Chờ duyệt
@@ -132,10 +132,10 @@ export default function AdminPostsPage() {
             Nháp
           </span>
         );
-      case "REJECTED":
+      case "ARCHIVED":
         return (
-          <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-            Đã từ chối
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+            Đã lưu trữ
           </span>
         );
       default:
@@ -216,10 +216,10 @@ export default function AdminPostsPage() {
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="ALL">Tất cả trạng thái</option>
-                <option value="PENDING">Chờ duyệt</option>
+                <option value="PENDING_REVIEW">Chờ duyệt</option>
                 <option value="PUBLISHED">Đã xuất bản</option>
                 <option value="DRAFT">Nháp</option>
-                <option value="REJECTED">Đã từ chối</option>
+                <option value="ARCHIVED">Đã lưu trữ</option>
               </select>
             </div>
           </div>
@@ -319,15 +319,15 @@ export default function AdminPostsPage() {
                         </button>
                         <button
                           onClick={() =>
-                            handleStatusChange(post.id, "REJECTED")
+                            handleStatusChange(post.id, "ARCHIVED")
                           }
-                          disabled={post.status === "REJECTED"}
+                          disabled={post.status === "ARCHIVED"}
                           className={`${
-                            post.status === "REJECTED"
-                              ? "text-red-600 dark:text-red-400"
+                            post.status === "ARCHIVED"
+                              ? "text-gray-600 dark:text-gray-400"
                               : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
                           } disabled:opacity-50`}
-                          title="Từ chối bài viết"
+                          title="Lưu trữ bài viết"
                         >
                           <XCircle className="w-4 h-4" />
                         </button>

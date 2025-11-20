@@ -101,7 +101,7 @@ export default function CommentsSection({
                 <div className="flex items-center space-x-4 text-sm">
                   <button className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                     <Heart className="w-4 h-4 mr-1" />
-                    <span>{comment.likes}</span>
+                    <span>{comment.likeCount || comment.likes || 0}</span>
                   </button>
                   {comment.replies && comment.replies.length > 0 && (
                     <span className="flex items-center text-gray-500 dark:text-gray-400">

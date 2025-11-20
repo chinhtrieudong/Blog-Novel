@@ -45,9 +45,7 @@ class ApiClient {
     // Always use port 8080 for API backend
     this.baseURL =
       process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
-    console.log("API Base URL:", this.baseURL);
-    console.log("Environment API_BASE_URL:", API_BASE_URL);
-    console.log("Is client:", typeof window !== "undefined");
+    // Removed debug logs
     this.loadToken();
 
     // Test backend connectivity only on client
@@ -58,15 +56,13 @@ class ApiClient {
 
   private async testBackendConnection() {
     try {
-      console.log("Testing backend connection...");
       const response = await fetch(`${this.baseURL}/posts`, {
         method: "GET",
         headers: {
           Accept: "application/json",
         },
       });
-      console.log("Backend test response status:", response.status);
-      console.log("Backend test response ok:", response.ok);
+      // Removed debug logs
     } catch (error) {
       console.error("Backend connection test failed:", error);
     }
@@ -117,18 +113,8 @@ class ApiClient {
     // Note: No Authorization header added for public requests
 
     try {
-      console.log("Making PUBLIC API request to:", url);
-      console.log("Request headers:", config.headers);
-      console.log("Request method:", config.method || "GET");
-      if (options.body instanceof FormData) {
-        console.log("Sending FormData:");
-        for (let [key, value] of options.body.entries()) {
-          console.log(key, value);
-        }
-      }
-
+      // Rem/vod debug ed sgforupcodocin
       const response = await fetch(url, config);
-      console.log("Response status:", response.status);
 
       // Check if response has content
       const contentType = response.headers.get("content-type");
@@ -193,9 +179,6 @@ class ApiClient {
     }
 
     try {
-      console.log("Making API request to:", url);
-      console.log("Request headers:", config.headers);
-      console.log("Request method:", config.method || "GET");
       if (options.body instanceof FormData) {
         console.log("Sending FormData:");
         for (let [key, value] of options.body.entries()) {
@@ -204,7 +187,6 @@ class ApiClient {
       }
 
       const response = await fetch(url, config);
-      console.log("Response status:", response.status);
 
       // Check if response has content
       const contentType = response.headers.get("content-type");
@@ -376,44 +358,38 @@ class ApiClient {
   }
 
   async createAuthor(
-    data: AuthorRequest
+    data: FormData | AuthorRequest
   ): Promise<ApiResponse<AuthorResponse>> {
-    if (data.avatar) {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      if (data.bio) formData.append("bio", data.bio);
-      formData.append("avatar", data.avatar);
-
-      return this.uploadRequest<AuthorResponse>("/authors", formData);
-    } else {
-      return this.request<AuthorResponse>("/authors", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+    if (data instanceof FormData) {
+      return this.uploadRequest<AuthorResponse>("/authors", data);
     }
+
+    const formData = new FormData();
+    formData.append("name", data.name);
+    if (data.bio) formData.append("bio", data.bio);
+    if (data.avatarImage) formData.append("avatarImage", data.avatarImage);
+
+    return this.uploadRequest<AuthorResponse>("/authors", formData);
   }
 
   async updateAuthor(
     id: number,
-    data: AuthorRequest
+    data: AuthorRequest | FormData
   ): Promise<ApiResponse<AuthorResponse>> {
-    if (data.avatar) {
-      const formData = new FormData();
-      formData.append("name", data.name);
-      if (data.bio) formData.append("bio", data.bio);
-      formData.append("avatar", data.avatar);
-
-      return this.uploadRequest<AuthorResponse>(
-        `/authors/${id}`,
-        formData,
-        "PUT"
-      );
-    } else {
-      return this.request<AuthorResponse>(`/authors/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+    if (data instanceof FormData) {
+      return this.uploadRequest<AuthorResponse>(`/authors/${id}`, data, "PUT");
     }
+
+    const formData = new FormData();
+    formData.append("name", data.name);
+    if (data.bio) formData.append("bio", data.bio);
+    if (data.avatarImage) formData.append("avatarImage", data.avatarImage);
+
+    return this.uploadRequest<AuthorResponse>(
+      `/authors/${id}`,
+      formData,
+      "PUT"
+    );
   }
 
   async deleteAuthor(id: number): Promise<ApiResponse<void>> {

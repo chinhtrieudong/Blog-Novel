@@ -32,7 +32,7 @@ export function AuthorCreateModal({
 }: AuthorCreateModalProps) {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarImage, setAvatarImage] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +40,7 @@ export function AuthorCreateModal({
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatar(file);
+      setAvatarImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -67,13 +67,14 @@ export function AuthorCreateModal({
     setError("");
 
     try {
-      const authorData: AuthorRequest = {
-        name: name.trim(),
-        bio: bio.trim() || undefined,
-        avatar: avatar || undefined,
-      };
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      formData.append("bio", bio.trim());
+      if (avatarImage) {
+        formData.append("avatarImage", avatarImage);
+      }
 
-      const response = await apiClient.createAuthor(authorData);
+      const response = await apiClient.createAuthor(formData);
 
       if (response.data) {
         onAuthorCreated(response.data);
@@ -92,7 +93,7 @@ export function AuthorCreateModal({
   const handleClose = () => {
     setName("");
     setBio("");
-    setAvatar(null);
+    setAvatarImage(null);
     setAvatarPreview("");
     setError("");
     onOpenChange(false);
@@ -175,7 +176,7 @@ export function AuthorCreateModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setAvatar(null);
+                    setAvatarImage(null);
                     setAvatarPreview("");
                   }}
                 >

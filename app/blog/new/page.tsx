@@ -20,7 +20,7 @@ export default function NewBlogPostPage() {
   const [content, setContent] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [status, setStatus] = useState("PENDING");
+  const [status, setStatus] = useState("PENDING_REVIEW");
   const [categoryIds, setCategoryIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

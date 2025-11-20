@@ -32,7 +32,7 @@ export interface NovelRequest {
 export interface AuthorRequest {
   name: string;
   bio?: string;
-  avatar?: File;
+  avatarImage?: File;
 }
 
 export interface PostRequest {

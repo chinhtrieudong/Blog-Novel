@@ -79,15 +79,21 @@ export default function Comments({ novelId, initialComments }: CommentsProps) {
           comments.map((comment) => (
             <div key={comment.id} className="flex space-x-3">
               <img
-                src={comment.author?.avatarUrl || "/placeholder.svg"}
-                alt={comment.author?.username || "User"}
+                src={comment.user?.avatarUrl || "/placeholder-user.jpg"}
+                alt={
+                  comment.user?.fullName ||
+                  comment.user?.username ||
+                  "Không xác định"
+                }
                 className="w-10 h-10 rounded-full flex-shrink-0"
               />
               <div className="flex-1">
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {comment.author?.username || "Anonymous"}
+                      {comment.user?.fullName ||
+                        comment.user?.username ||
+                        "Người dùng ẩn danh"}
                     </span>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
                       {new Date(comment.createdAt).toLocaleString("vi-VN")}
