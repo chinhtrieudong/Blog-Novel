@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import apiClient from "@/lib/api-client";
+import { toast } from "@/hooks/use-toast";
 import {
   DeleteConfirmationModal,
   UserViewModal,
@@ -83,32 +84,15 @@ export default function AdminPage() {
           setNovels([]);
         }
 
-        // Fetch users if admin from backend API (port 8080)
+        // Fetch users if admin from backend API using apiClient
         if (user?.role === "ADMIN") {
           try {
-            // Note: apiClient.getUsers() might need to be implemented
-            const usersResponse = await fetch(
-              "http://localhost:8080/api/users?page=0&size=5"
-            );
-
-            if (!usersResponse.ok) {
-              console.error("Users API response not ok:", usersResponse.status);
-              setUsers([]);
-              return;
-            }
-
-            const responseText = await usersResponse.text();
-            if (!responseText.trim()) {
-              console.error("Empty response from users API");
-              setUsers([]);
-              return;
-            }
-
-            const usersData = JSON.parse(responseText);
-            if (usersData.code === 200 && usersData.data?.content) {
-              setUsers(usersData.data.content);
+            const usersResponse = await apiClient.getUsers();
+            if (usersResponse.data && Array.isArray(usersResponse.data)) {
+              // Get first 5 users for display (API doesn't use pagination)
+              setUsers(usersResponse.data.slice(0, 5));
             } else {
-              console.error("Invalid users API response format:", usersData);
+              console.error("No users data in response");
               setUsers([]);
             }
           } catch (error) {
@@ -133,7 +117,7 @@ export default function AdminPage() {
     totalPosts: posts.length,
     totalNovels: novels.length,
     totalUsers: users.length,
-    totalViews:
+    viewCount:
       posts.reduce((sum, post) => sum + (post.viewCount || 0), 0) +
       novels.reduce((sum, novel) => sum + (novel.views || 0), 0),
     monthlyGrowth: {
@@ -200,17 +184,49 @@ export default function AdminPage() {
   }));
 
   // Transform API data for display
-  const recentUsers = users.map((user) => ({
-    id: user.id,
-    name: user.fullName || user.username || "Chưa cập nhật",
-    email: user.email || "Chưa cập nhật",
-    joinDate: user.createdAt
-      ? new Date(user.createdAt).toLocaleDateString("vi-VN")
-      : "Chưa cập nhật",
-    status: user.status === "ACTIVE" ? "Hoạt động" : "Tạm khóa",
-    role: user.role === "USER" ? "Độc giả" : user.role || "Chưa cập nhật",
-    avatar: "/placeholder.svg?height=40&width=40",
-  }));
+  const recentUsers = users.map((user) => {
+    let displayRole = "Chưa cập nhật";
+    switch (user.role) {
+      case "READER":
+        displayRole = "Độc giả";
+        break;
+      case "AUTHOR":
+        displayRole = "Tác giả";
+        break;
+      case "ADMIN":
+        displayRole = "Quản trị viên";
+        break;
+      default:
+        displayRole = user.role || "Chưa cập nhật";
+    }
+
+    let displayStatus = "Tạm khóa";
+    switch (user.status) {
+      case "ACTIVE":
+        displayStatus = "Hoạt động";
+        break;
+      case "LOCKED":
+        displayStatus = "Tạm khóa";
+        break;
+      case "BANNED":
+        displayStatus = "Cấm";
+        break;
+      default:
+        displayStatus = user.status || "Tạm khóa";
+    }
+
+    return {
+      id: user.id,
+      name: user.fullName || user.username || "Chưa cập nhật",
+      email: user.email || "Chưa cập nhật",
+      joinDate: user.createdAt
+        ? new Date(user.createdAt).toLocaleDateString("vi-VN")
+        : "Chưa cập nhật",
+      status: displayStatus,
+      role: displayRole,
+      avatar: "/placeholder.svg?height=40&width=40",
+    };
+  });
 
   const tabs = [
     ...(user?.role === "ADMIN"
@@ -268,7 +284,7 @@ export default function AdminPage() {
     try {
       // Map Vietnamese display values to backend enum values
       const roleMap: { [key: string]: string } = {
-        "Độc giả": "USER",
+        "Độc giả": "READER",
         "Tác giả": "AUTHOR",
         "Quản trị viên": "ADMIN",
       };
@@ -290,22 +306,10 @@ export default function AdminPage() {
       const response = await apiClient.updateUser(selectedUser.id, updateData);
 
       // Refresh users data
-      const token = localStorage.getItem("accessToken");
-      const usersResponse = await fetch(
-        "http://localhost:8080/api/users?page=0&size=5",
-        {
-          headers: {
-            Accept: "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        }
-      );
-
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        if (usersData.code === 200 && Array.isArray(usersData.data)) {
-          setUsers(usersData.data);
-        }
+      const usersResponse = await apiClient.getUsers();
+      if (usersResponse.data && Array.isArray(usersResponse.data)) {
+        // Get first 5 users for display (API doesn't use pagination)
+        setUsers(usersResponse.data.slice(0, 5));
       }
 
       setIsEditModalOpen(false);
@@ -346,7 +350,7 @@ export default function AdminPage() {
 
       // Call the API to update post status
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/posts/${
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/posts/${
           selectedPost.id
         }/status?status=${newStatus}`,
         {
@@ -385,7 +389,7 @@ export default function AdminPage() {
 
       // Call the API to update novel status
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/novels/${
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/novels/${
           selectedNovel.id
         }/status?status=${newStatus}`,
         {
@@ -517,7 +521,7 @@ export default function AdminPage() {
                       Lượt xem
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {stats.totalViews.toLocaleString()}
+                      {stats.viewCount.toLocaleString()}
                     </p>
                   </div>
                 </div>
