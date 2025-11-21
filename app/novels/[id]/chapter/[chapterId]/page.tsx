@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ChevronLeft,
@@ -17,6 +17,7 @@ import {
   Moon,
   Sun,
   Loader2,
+  X,
 } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { NovelResponse, ChapterResponse, CommentResponse } from "@/types/api";
@@ -44,6 +45,10 @@ export default function ChapterDetailPage({
   const [chapterComments, setChapterComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isChapterModalOpen, setIsChapterModalOpen] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!novelId || !chapterId) return;
@@ -64,16 +69,6 @@ export default function ChapterDetailPage({
           console.log("Chapter views incremented successfully");
         } catch (error) {
           console.error("Failed to increment chapter views:", error);
-          // Don't fail the page load if view increment fails
-        }
-
-        // Increment novel views
-        try {
-          console.log("Incrementing novel views for novel:", novelId);
-          await apiClient.incrementNovelViews(novelId!);
-          console.log("Novel views incremented successfully");
-        } catch (error) {
-          console.error("Failed to increment novel views:", error);
           // Don't fail the page load if view increment fails
         }
 
@@ -142,6 +137,36 @@ export default function ChapterDetailPage({
   const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
   const nextChapter =
     currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
+
+  // Handle comment submission
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newComment.trim() || !novelId || !chapterId) return;
+
+    setIsSubmittingComment(true);
+
+    try {
+      const response = await apiClient.createChapterComment(
+        novelId,
+        chapterId,
+        {
+          content: newComment.trim(),
+        }
+      );
+
+      if (response.data) {
+        // Add the new comment to the beginning of the list
+        setChapterComments([response.data, ...chapterComments]);
+        setNewComment(""); // Clear the textarea
+      }
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      // You might want to show a toast notification here
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
 
   return (
     <div
@@ -251,12 +276,12 @@ export default function ChapterDetailPage({
             <div></div>
           )}
 
-          <Link
-            href={`/novels/${novel.id}`}
+          <button
+            onClick={() => setIsChapterModalOpen(true)}
             className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
           >
             Danh sách chương
-          </Link>
+          </button>
 
           {nextChapter ? (
             <Link
@@ -278,18 +303,25 @@ export default function ChapterDetailPage({
           </h3>
 
           {/* Comment Form */}
-          <div className="mb-6">
+          <form onSubmit={handleCommentSubmit} className="mb-6">
             <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
               placeholder="Viết bình luận của bạn..."
-              className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+              className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               rows={4}
+              required
             />
             <div className="flex justify-end mt-2">
-              <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                Gửi bình luận
+              <button
+                type="submit"
+                disabled={isSubmittingComment || !newComment.trim()}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingComment ? "Đang gửi..." : "Gửi bình luận"}
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Comments List */}
           <div className="space-y-4">
@@ -335,6 +367,100 @@ export default function ChapterDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Chapter List Modal */}
+      {isChapterModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Danh sách chương - {novel.title}
+                </h2>
+                <button
+                  onClick={() => setIsChapterModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Tổng cộng {chapters.length} chương
+              </p>
+            </div>
+
+            <div className="max-h-96 overflow-y-auto p-6">
+              <div className="space-y-2">
+                {chapters.map((chapterItem, index) => (
+                  <button
+                    key={chapterItem.id}
+                    onClick={() => {
+                      setIsChapterModalOpen(false);
+                      router.push(
+                        `/novels/${novel.id}/chapter/${chapterItem.id}`
+                      );
+                    }}
+                    className={`w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors group ${
+                      chapterItem.id === chapterId
+                        ? "bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3
+                          className={`font-medium group-hover:text-purple-600 dark:group-hover:text-purple-400 ${
+                            chapterItem.id === chapterId
+                              ? "text-purple-600 dark:text-purple-400"
+                              : "text-gray-900 dark:text-white"
+                          }`}
+                        >
+                          Chương {index + 1}: {chapterItem.title}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          <span>
+                            {chapterItem.createdAt
+                              ? new Date(
+                                  chapterItem.createdAt
+                                ).toLocaleDateString("vi-VN")
+                              : "N/A"}
+                          </span>
+                          <Eye className="w-4 h-4 ml-4 mr-1" />
+                          <span>{chapterItem.viewCount || 0} lượt đọc</span>
+                        </div>
+                      </div>
+                      {chapterItem.id === chapterId && (
+                        <div className="text-purple-600 dark:text-purple-400">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                <Link
+                  href={`/novels/${novel.id}`}
+                  onClick={() => setIsChapterModalOpen(false)}
+                  className="text-purple-600 dark:text-purple-400 hover:underline"
+                >
+                  Xem trang tiểu thuyết
+                </Link>
+                <button
+                  onClick={() => setIsChapterModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -20,15 +20,10 @@ export default async function NovelDetailPage({
 }) {
   const novelId = parseInt((await params).id);
 
-  // Increment novel views (silence errors)
-  try {
-    await apiClient.incrementNovelViews(novelId);
-  } catch (error) {
-    // Silently fail view increment - not critical
-    console.log("Could not increment novel views:", error);
-  }
+  await apiClient.incrementNovelViews(novelId);
 
   const novelResponse = await apiClient.getNovelById(novelId);
+  console.log(novelResponse.data);
 
   if (!novelResponse.data) {
     return (
@@ -128,7 +123,7 @@ export default async function NovelDetailPage({
                     <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <Users className="w-5 h-5 mr-1" />
                       <span>
-                        {novel.totalViews?.toLocaleString() || "0"} lượt đọc
+                        {novel.viewCount?.toLocaleString() || "0"} lượt đọc
                       </span>
                     </div>
                     <div className="flex items-center text-gray-600 dark:text-gray-400">
