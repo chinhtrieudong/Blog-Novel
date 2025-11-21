@@ -112,7 +112,7 @@ export interface NovelResponse {
   status: NovelStatus;
   coverImage?: string;
   totalChapters: number;
-  totalViews: number;
+  viewCount: number;
   totalLikes: number;
   avgRating: number;
   createdAt: string;
@@ -228,7 +228,7 @@ export interface AnalyticsDashboardResponse {
   totalUsers: number;
   totalPosts: number;
   totalNovels: number;
-  totalViews: number;
+  viewCount: number;
   recentActivity: ActivityItem[];
 }
 
@@ -256,7 +256,7 @@ export interface AnalyticsUsersResponse {
 }
 
 export interface AnalyticsTrafficResponse {
-  totalViews: number;
+  viewCount: number;
   uniqueVisitors: number;
   pageViews: number;
   trafficGrowth: GrowthData[];

@@ -193,7 +193,7 @@ export default function MyNovelsPage() {
                         </div>
                         <div className="flex items-center">
                           <Eye className="w-4 h-4 mr-1" />
-                          <span>{novel.totalViews || 0} lượt xem</span>
+                          <span>{novel.viewCount || 0} lượt xem</span>
                         </div>
                       </div>
 

@@ -36,7 +36,7 @@ export async function GET(
         ? novel.cover
         : `/placeholder.svg`,
       totalChapters: actualChapterCount,
-      totalViews: novel.views,
+      viewCount: novel.views,
       totalLikes: novel.likes,
       avgRating: novel.rating,
       createdAt: novel.createdAt || novel.publishDate,

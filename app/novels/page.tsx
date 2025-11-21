@@ -100,7 +100,7 @@ export default function NovelsPage() {
         genres: [], // Not available in search results
         status: "ONGOING", // Default status
         coverImage: item.coverImage,
-        totalViews: 0, // Not available in search results
+        viewCount: 0, // Not available in search results
         avgRating: item.avgRating || 0,
         totalChapters: 0, // Not available in search results
         createdAt: new Date().toISOString(),
@@ -135,10 +135,7 @@ export default function NovelsPage() {
     completedNovels: displayedNovels.filter((n) => n.status === "COMPLETED")
       .length,
     ongoingNovels: displayedNovels.filter((n) => n.status === "ONGOING").length,
-    totalViews: displayedNovels.reduce(
-      (sum, n) => sum + (n.totalViews || 0),
-      0
-    ),
+    viewCount: displayedNovels.reduce((sum, n) => sum + (n.viewCount || 0), 0),
   };
 
   // Get featured novels (top 3 by rating)
@@ -149,7 +146,7 @@ export default function NovelsPage() {
   return (
     <div className="min-h-screen" data-page-type="novel">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 py-16 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-32 h-32 bg-purple-300 rounded-full blur-3xl"></div>
@@ -246,7 +243,7 @@ export default function NovelsPage() {
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center shadow-sm">
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {(stats.totalViews / 1000000).toFixed(1)}M
+                {(stats.viewCount / 1000000).toFixed(1)}M
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Lượt đọc
@@ -388,7 +385,7 @@ export default function NovelsPage() {
                       </div>
                       <div className="flex items-center">
                         <Users className="w-3 h-3 mr-1" />
-                        <span>{(novel.totalViews || 0).toLocaleString()}</span>
+                        <span>{(novel.viewCount || 0).toLocaleString()}</span>
                       </div>
                     </div>
 

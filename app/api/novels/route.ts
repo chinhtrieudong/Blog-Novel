@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         status: novel.status,
         coverImage: novel.cover,
         totalChapters: actualChapterCount,
-        totalViews: novel.views,
+        viewCount: novel.views,
         totalLikes: novel.likes,
         avgRating: novel.rating,
         createdAt: novel.publishDate,

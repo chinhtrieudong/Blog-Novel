@@ -61,7 +61,7 @@ export async function GET(
         totalWords: novel.totalWords,
         averageChapterLength: novel.averageChapterLength,
         coverImage: novel.cover,
-        totalViews: novel.views,
+        viewCount: novel.views,
         totalChapters: actualChapterCount,
         avgRating: novel.rating,
         updatedAt: novel.updatedAt || novel.lastUpdate,
