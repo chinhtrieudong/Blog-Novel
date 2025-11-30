@@ -164,7 +164,7 @@ export default function EditAuthorPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Link
-              href="/admin/authors"
+              href="/admin"
               className="mr-4 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <ChevronLeft className="w-5 h-5" />

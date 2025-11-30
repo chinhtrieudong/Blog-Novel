@@ -17,13 +17,13 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import apiClient from "@/lib/api-client";
-import { PostResponse, PagedResponse } from "@/types/api";
+import { NovelResponse, PagedResponse } from "@/types/api";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { DeleteConfirmationModal } from "@/components/admin/modals/DeleteConfirmationModal";
 
-export default function AdminPostsPage() {
-  const [posts, setPosts] = useState<PostResponse[]>([]);
+export default function AdminNovelsPage() {
+  const [novels, setNovels] = useState<NovelResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,16 +32,18 @@ export default function AdminPostsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<PostResponse | null>(null);
+  const [novelToDelete, setNovelToDelete] = useState<NovelResponse | null>(
+    null
+  );
   const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      fetchPosts();
+      fetchNovels();
     }
   }, [isAuthenticated, user, currentPage, searchTerm, statusFilter]);
 
-  const fetchPosts = async () => {
+  const fetchNovels = async () => {
     try {
       setIsLoading(true);
       const params: any = {
@@ -53,102 +55,80 @@ export default function AdminPostsPage() {
         params.title = searchTerm;
       }
 
-      if (statusFilter !== "ALL") {
-        params.status = statusFilter;
-      }
+      const response = await apiClient.getNovels(params);
+      const data = response.data as PagedResponse<NovelResponse>;
 
-      const response = await apiClient.getPosts(params);
-      const data = response.data as PagedResponse<PostResponse>;
-
-      setPosts(data.content);
+      setNovels(data.content);
       setTotalPages(data.totalPages);
     } catch (err) {
-      console.error("Failed to fetch posts:", err);
-      setError("Không thể tải danh sách bài viết.");
+      console.error("Failed to fetch novels:", err);
+      setError("Không thể tải danh sách tiểu thuyết.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = (post: PostResponse) => {
-    setPostToDelete(post);
+  const handleDelete = (novel: NovelResponse) => {
+    setNovelToDelete(novel);
     setDeleteModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!postToDelete) return;
+    if (!novelToDelete) return;
 
     try {
-      setIsDeleting(postToDelete.id);
-      await apiClient.deletePost(postToDelete.id);
-      await fetchPosts(); // Refresh danh sách
+      setIsDeleting(novelToDelete.id);
+      await apiClient.deleteNovel(novelToDelete.id);
+      await fetchNovels(); // Refresh danh sách
     } catch (err) {
-      console.error("Failed to delete post:", err);
-      alert("Không thể xóa bài viết. Vui lòng thử lại.");
+      console.error("Failed to delete novel:", err);
+      alert("Không thể xóa tiểu thuyết. Vui lòng thử lại.");
     } finally {
       setIsDeleting(null);
       setDeleteModalOpen(false);
-      setPostToDelete(null);
+      setNovelToDelete(null);
     }
   };
 
   const handleDeleteCancel = () => {
     setDeleteModalOpen(false);
-    setPostToDelete(null);
+    setNovelToDelete(null);
   };
 
-  const handleStatusChange = async (postId: number, newStatus: string) => {
+  const handleStatusChange = async (novelId: number, newStatus: string) => {
     try {
-      // For now, we'll use a direct API call to update post status
-      // In a real app, you might want to create a dedicated API method for this
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_BASE_URL || ""
-        }/posts/${postId}/status?status=${newStatus}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        await fetchPosts(); // Refresh danh sách
-      } else {
-        throw new Error("Không thể cập nhật trạng thái bài viết.");
-      }
+      await apiClient.updateNovelStatus(novelId, newStatus);
+      await fetchNovels(); // Refresh danh sách
     } catch (err) {
-      console.error("Failed to update post status:", err);
-      alert("Không thể cập nhật trạng thái bài viết. Vui lòng thử lại.");
+      console.error("Failed to update novel status:", err);
+      alert("Không thể cập nhật trạng thái tiểu thuyết. Vui lòng thử lại.");
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "PUBLISHED":
+      case "ONGOING":
         return (
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-            Đã xuất bản
+            Đang tiếp tục
           </span>
         );
-      case "PENDING_REVIEW":
+      case "COMPLETED":
         return (
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            Chờ duyệt
+            Hoàn thành
           </span>
         );
-      case "DRAFT":
+      case "DROPPED":
+        return (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+            Đã dừng
+          </span>
+        );
+      case "HIATUS":
         return (
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-            Nháp
-          </span>
-        );
-      case "ARCHIVED":
-        return (
-          <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-            Đã lưu trữ
+            Tạm nghỉ
           </span>
         );
       default:
@@ -166,7 +146,7 @@ export default function AdminPostsPage() {
         <div className="flex items-center space-x-2">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           <span className="text-gray-600 dark:text-gray-400">
-            Đang tải danh sách bài viết...
+            Đang tải danh sách tiểu thuyết...
           </span>
         </div>
       </div>
@@ -180,7 +160,7 @@ export default function AdminPostsPage() {
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <button
-            onClick={fetchPosts}
+            onClick={fetchNovels}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Thử lại
@@ -195,14 +175,14 @@ export default function AdminPostsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Quản lý bài viết
+            Quản lý tiểu thuyết
           </h1>
           <Link
-            href="/blog/new"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+            href="/novels/new"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Thêm bài viết mới
+            Thêm tiểu thuyết mới
           </Link>
         </div>
 
@@ -214,10 +194,10 @@ export default function AdminPostsPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm bài viết..."
+                  placeholder="Tìm kiếm tiểu thuyết..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
             </div>
@@ -226,26 +206,26 @@ export default function AdminPostsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
               >
                 <option value="ALL">Tất cả trạng thái</option>
-                <option value="PENDING_REVIEW">Chờ duyệt</option>
-                <option value="PUBLISHED">Đã xuất bản</option>
-                <option value="DRAFT">Nháp</option>
-                <option value="ARCHIVED">Đã lưu trữ</option>
+                <option value="ONGOING">Đang tiếp tục</option>
+                <option value="COMPLETED">Hoàn thành</option>
+                <option value="DROPPED">Đã dừng</option>
+                <option value="HIATUS">Tạm nghỉ</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Posts Table */}
+        {/* Novels Table */}
         <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Bài viết
+                    Tiểu thuyết
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Tác giả
@@ -265,92 +245,104 @@ export default function AdminPostsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {posts.map((post) => (
+                {novels.map((novel) => (
                   <tr
-                    key={post.id}
+                    key={novel.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        {post.coverImage && (
+                        {novel.coverImage && (
                           <img
                             className="h-10 w-10 rounded-lg object-cover mr-3"
-                            src={post.coverImage}
-                            alt={post.title}
+                            src={novel.coverImage}
+                            alt={novel.title}
                           />
                         )}
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {post.title}
+                            {novel.title}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {post.categories.map((cat) => cat.name).join(", ")}
+                            {novel.genres.map((genre) => genre.name).join(", ")}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {post.authorName}
+                        {novel.author?.name || "N/A"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(post.status)}
+                      {getStatusBadge(novel.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {post.status === "PUBLISHED"
-                        ? format(new Date(post.updatedAt), "dd/MM/yyyy", {
-                            locale: vi,
-                          })
-                        : "Chưa xuất bản"}
+                      {format(new Date(novel.createdAt), "dd/MM/yyyy", {
+                        locale: vi,
+                      })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {post.viewCount}
+                      {novel.viewCount}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <Link
-                          href={`/blog/${post.id}`}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          title="Xem bài viết"
+                          href={`/novels/${novel.id}`}
+                          className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
+                          title="Xem tiểu thuyết"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
+                        <Link
+                          href={`/admin/novels/${novel.id}/chapters`}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          title="Quản lý chương"
+                        >
+                          📖
+                        </Link>
                         <button
                           onClick={() =>
-                            handleStatusChange(post.id, "PUBLISHED")
+                            handleStatusChange(novel.id, "ONGOING")
                           }
-                          disabled={post.status === "PUBLISHED"}
+                          disabled={novel.status === "ONGOING"}
                           className={`${
-                            post.status === "PUBLISHED"
+                            novel.status === "ONGOING"
                               ? "text-green-600 dark:text-green-400"
-                              : "text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                              : "text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                           } disabled:opacity-50`}
-                          title="Duyệt bài viết"
+                          title="Đặt đang tiếp tục"
                         >
                           <CheckCircle className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() =>
-                            handleStatusChange(post.id, "ARCHIVED")
+                            handleStatusChange(novel.id, "COMPLETED")
                           }
-                          disabled={post.status === "ARCHIVED"}
+                          disabled={novel.status === "COMPLETED"}
                           className={`${
-                            post.status === "ARCHIVED"
-                              ? "text-gray-600 dark:text-gray-400"
-                              : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                            novel.status === "COMPLETED"
+                              ? "text-blue-600 dark:text-blue-400"
+                              : "text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                           } disabled:opacity-50`}
-                          title="Lưu trữ bài viết"
+                          title="Đặt hoàn thành"
                         >
-                          <XCircle className="w-4 h-4" />
+                          🎯
                         </button>
-                        <button
-                          onClick={() => handleDelete(post)}
-                          disabled={isDeleting === post.id}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
-                          title="Xóa bài viết"
+                        <Link
+                          href={`/admin/novels/edit/${novel.id}`}
+                          className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                          title="Chỉnh sửa"
                         >
-                          {isDeleting === post.id ? (
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(novel)}
+                          disabled={isDeleting === novel.id}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                          title="Xóa tiểu thuyết"
+                        >
+                          {isDeleting === novel.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <Trash2 className="w-4 h-4" />
@@ -364,10 +356,10 @@ export default function AdminPostsPage() {
             </table>
           </div>
 
-          {posts.length === 0 && (
+          {novels.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">
-                Không có bài viết nào.
+                Không có tiểu thuyết nào.
               </p>
             </div>
           )}
@@ -403,8 +395,8 @@ export default function AdminPostsPage() {
           isOpen={deleteModalOpen}
           onClose={handleDeleteCancel}
           onConfirm={handleDeleteConfirm}
-          itemType="post"
-          itemTitle={postToDelete?.title || ""}
+          itemType="novel"
+          itemTitle={novelToDelete?.title || ""}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, Save, User } from "lucide-react";
+import { ChevronLeft, Save, User, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api-client";
@@ -10,9 +10,46 @@ export default function NewAuthorPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // Handle file selection for avatar upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setError("Vui lòng chọn file hình ảnh.");
+        return;
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Kích thước file không được vượt quá 5MB.");
+        return;
+      }
+
+      setAvatarFile(file);
+      setAvatarUrl(""); // Clear URL when file is selected
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove uploaded file
+  const removeFile = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setAvatarUrl("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,17 +69,42 @@ export default function NewAuthorPage() {
     setError("");
 
     try {
-      const authorData = {
-        name: name.trim(),
-        bio: bio.trim() || undefined,
-        avatarUrl: avatarUrl.trim() || undefined,
-      };
+      // Prepare FormData for multipart upload
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      if (bio.trim()) {
+        formData.append("bio", bio.trim());
+      }
 
-      const response = await apiClient.createAuthor(authorData);
-      console.log("Author created:", response.data);
+      // Handle avatar upload
+      if (avatarFile) {
+        formData.append("avatarImage", avatarFile);
+      } else if (avatarUrl.trim()) {
+        formData.append("avatarUrl", avatarUrl.trim());
+      }
+
+      // Use fetch directly for multipart upload
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/authors", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Lỗi không xác định" }));
+        throw new Error(errorData.message || `Lỗi HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Author created:", result);
 
       // Redirect to authors list
-      router.push("/admin/authors");
+      router.push("/admin");
     } catch (err: any) {
       console.error("Error creating author:", err);
       setError(
@@ -60,7 +122,7 @@ export default function NewAuthorPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Link
-              href="/admin/authors"
+              href="/admin"
               className="mr-4 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -134,6 +196,32 @@ export default function NewAuthorPage() {
               </p>
             </div>
 
+            {/* Avatar Upload */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Tải lên ảnh đại diện
+              </label>
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <label className="flex items-center justify-center w-full px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    <Upload className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" />
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {avatarFile ? avatarFile.name : "Chọn ảnh đại diện"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Chọn file hình ảnh (JPG, PNG, GIF). Kích thước tối đa: 5MB
+                </p>
+              </div>
+            </div>
+
             {/* Avatar URL */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -143,23 +231,39 @@ export default function NewAuthorPage() {
                 type="url"
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="https://example.com/avatar.jpg"
+                disabled={!!avatarFile}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder={
+                  avatarFile
+                    ? "Đã chọn file upload"
+                    : "https://example.com/avatar.jpg"
+                }
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Link ảnh đại diện của tác giả (tùy chọn)
+                Link ảnh đại diện của tác giả (tùy chọn). Không thể nhập khi đã
+                chọn file upload.
               </p>
             </div>
 
             {/* Avatar Preview */}
-            {avatarUrl && (
+            {(avatarPreview || avatarUrl) && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Xem trước ảnh đại diện
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Xem trước ảnh đại diện
+                  </label>
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    title="Xóa ảnh"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="inline-block">
                   <img
-                    src={avatarUrl}
+                    src={avatarPreview || avatarUrl}
                     alt="Avatar preview"
                     className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                     onError={(e) => {
@@ -167,6 +271,12 @@ export default function NewAuthorPage() {
                     }}
                   />
                 </div>
+                {avatarFile && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    File: {avatarFile.name} (
+                    {(avatarFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
               </div>
             )}
           </div>
