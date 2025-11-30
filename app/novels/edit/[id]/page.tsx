@@ -1,18 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Save, Send } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/lib/api-client";
-import { GenreResponse, NovelStatus, AuthorResponse } from "@/types/api";
+import {
+  GenreResponse,
+  NovelStatus,
+  AuthorResponse,
+  NovelResponse,
+} from "@/types/api";
 import { NovelStatus as NovelStatusEnum } from "@/types/api";
 import { AuthorCreateModal } from "@/components/ui/author-create-modal";
 import { GenreMultiSelect } from "@/components/ui/genre-multi-select";
 import { SingleAuthorSelect } from "@/components/ui/single-author-select";
 
-export default function NewNovelPage() {
+export default function EditNovelPage() {
+  const params = useParams();
+  const novelId = parseInt(params.id as string);
+  const router = useRouter();
+
   const [novelTitle, setNovelTitle] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState<AuthorResponse | null>(
     null
@@ -23,28 +33,27 @@ export default function NewNovelPage() {
   const [status, setStatus] = useState("DRAFT");
   const [synopsis, setSynopsis] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   const [genres, setGenres] = useState<
     { id: number; name: string; description?: string }[]
   >([]);
 
-  // Set default author from user profile
+  // Fetch novel data on component mount
   useEffect(() => {
-    if (user && user.fullName && !selectedAuthor) {
-      // Create a default author object if needed, but since it's from user, we might need to handle differently
-      // For now, we'll leave it empty and let user select
+    if (novelId && isAuthenticated) {
+      fetchNovelData();
     }
-  }, [user, selectedAuthor]);
+  }, [novelId, isAuthenticated]);
 
-  // Fetch genres on component mount (only if authenticated)
+  // Fetch genres on component mount
   useEffect(() => {
     if (isAuthenticated) {
       const fetchGenres = async () => {
         try {
-          // Try getGenres first, fallback to getCategories
           let response = await apiClient.getGenres();
           if (!response?.data) {
             response = await apiClient.getCategories();
@@ -62,6 +71,28 @@ export default function NewNovelPage() {
     }
   }, [isAuthenticated]);
 
+  const fetchNovelData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiClient.getNovelById(novelId);
+      const novel = response.data;
+
+      if (novel) {
+        setNovelTitle(novel.title || "");
+        setSynopsis(novel.description || "");
+        setStatus(novel.status || "DRAFT");
+        setSelectedAuthor(novel.author);
+        setSelectedGenres(novel.genres?.map((g: any) => g.id) || []);
+        setImagePreview(novel.coverImage || "");
+      }
+    } catch (error) {
+      console.error("Failed to fetch novel:", error);
+      setError("Không thể tải thông tin tiểu thuyết.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
@@ -74,7 +105,7 @@ export default function NewNovelPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 dark:text-gray-400">
-            Đang kiểm tra đăng nhập...
+            Đang tải thông tin tiểu thuyết...
           </p>
         </div>
       </div>
@@ -105,15 +136,7 @@ export default function NewNovelPage() {
     }
   };
 
-  const handleGenreChange = (genreId: number, checked: boolean) => {
-    if (checked) {
-      setSelectedGenres((prev) => [...prev, genreId]);
-    } else {
-      setSelectedGenres((prev) => prev.filter((id) => id !== genreId));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, submitStatus?: string) => {
     e.preventDefault();
     if (!user) return;
 
@@ -128,24 +151,61 @@ export default function NewNovelPage() {
     setIsSubmitting(true);
     setError("");
     try {
-      const novelData = {
-        title: novelTitle.trim(),
-        description: synopsis.trim(),
-        authorIds: [selectedAuthor.id],
-        genreIds: selectedGenres,
-        status: status as any,
-        coverImage: coverImage || undefined,
-      };
+      // Create FormData for novel update
+      const formData = new FormData();
+      formData.append("title", novelTitle.trim());
+      formData.append("description", synopsis.trim());
 
-      const response = await apiClient.createNovel(novelData);
-      console.log("Novel created:", response.data);
+      // Append author ID as separate field with same name
+      if (selectedAuthor) {
+        formData.append("authorIds", selectedAuthor.id.toString());
+      }
 
-      // Redirect to my novels
-      router.push("/my-novels");
+      // Append each genre ID as separate field with same name
+      selectedGenres.forEach((genreId) => {
+        formData.append("genreIds", genreId.toString());
+      });
+
+      formData.append("status", submitStatus || status);
+
+      if (coverImage) {
+        formData.append("coverImage", coverImage);
+      }
+
+      console.log("Submitting FormData:");
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      const response = await apiClient.updateNovelFromFormData(
+        novelId,
+        formData
+      );
+      console.log("Novel updated:", response);
+
+      // Check for successful response with proper data structure
+      if (response && response.code === 200) {
+        console.log("Novel updated successfully:", response.data);
+
+        // Show success toast
+        toast({
+          title: "Thành công",
+          description: "Tiểu thuyết đã được cập nhật thành công!",
+        });
+
+        // Delay redirect to allow toast to show
+        setTimeout(() => {
+          router.push("/my-novels");
+        }, 1500);
+      } else {
+        console.error("Update failed - invalid response:", response);
+        setError("Cập nhật thất bại. Vui lòng thử lại.");
+      }
     } catch (error: any) {
-      console.error("Error creating novel:", error);
+      console.error("Error updating novel:", error);
       setError(
-        error.message || "Có lỗi xảy ra khi tạo tiểu thuyết. Vui lòng thử lại."
+        error.message ||
+          "Có lỗi xảy ra khi cập nhật tiểu thuyết. Vui lòng thử lại."
       );
     } finally {
       setIsSubmitting(false);
@@ -165,16 +225,13 @@ export default function NewNovelPage() {
               <ChevronLeft className="w-5 h-5" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Tạo Tiểu Thuyết Mới
+              Chỉnh Sửa Tiểu Thuyết
             </h1>
           </div>
           <div className="flex items-center space-x-3">
             <button
               type="button"
-              onClick={() => {
-                setStatus("DRAFT");
-                handleSubmit(new Event("submit") as any);
-              }}
+              onClick={(e) => handleSubmit(e, "DRAFT")}
               disabled={isSubmitting}
               className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
             >
@@ -183,24 +240,23 @@ export default function NewNovelPage() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setStatus("ONGOING");
-                handleSubmit(new Event("submit") as any);
-              }}
+              onClick={(e) => handleSubmit(e, "ONGOING")}
               disabled={isSubmitting}
               className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
               <Send className="w-4 h-4 inline-block mr-2" />
-              Xuất Bản
+              Cập Nhật
             </button>
           </div>
         </div>
+
         {/* Error Message */}
         {error && (
           <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
@@ -217,6 +273,7 @@ export default function NewNovelPage() {
               required
             />
           </div>
+
           {/* Author & Genre */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
@@ -271,6 +328,7 @@ export default function NewNovelPage() {
               )}
             </div>
           </div>
+
           {/* Synopsis */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
