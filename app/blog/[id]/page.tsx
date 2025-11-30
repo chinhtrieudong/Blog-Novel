@@ -8,11 +8,12 @@ import {
   Share2,
   Heart,
   MessageCircle,
-  Bookmark,
 } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { PostResponse, CommentResponse } from "@/types/api";
 import CommentsSection from "@/components/comments-section";
+import BookmarkButton from "@/components/bookmark-button";
+import ShareButton from "@/components/share-button";
 
 export default async function BlogDetailPage({
   params,
@@ -201,14 +202,16 @@ export default async function BlogDetailPage({
               </div>
 
               <div className="flex items-center space-x-4">
-                <button className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                  <Share2 className="w-5 h-5" />
-                  <span>Chia sẻ</span>
-                </button>
-                <button className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                  <Bookmark className="w-5 h-5" />
-                  <span>Lưu</span>
-                </button>
+                <ShareButton
+                  postId={postData.id}
+                  title={post.title}
+                  description={post.excerpt}
+                />
+                <BookmarkButton
+                  postId={postData.id}
+                  postTitle={post.title}
+                  size="lg"
+                />
               </div>
             </div>
 

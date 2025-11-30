@@ -153,22 +153,22 @@ export default function MyNovelsPage() {
                 </Link>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {novels.map((novel) => (
                   <article
                     key={novel.id}
-                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300 overflow-hidden cursor-pointer transform hover:rotate-1"
                   >
                     <div className="aspect-video bg-gray-200 dark:bg-gray-700">
                       <img
-                        src={novel.coverImage || "/placeholder-novel.svg"}
+                        src={novel.coverImage || "/default-img.png"}
                         alt={novel.title}
                         className="w-full h-full object-cover"
                       />
                     </div>
 
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                             novel.status
@@ -178,11 +178,11 @@ export default function MyNovelsPage() {
                         </span>
                       </div>
 
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                         {novel.title}
                       </h2>
 
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+                      <p className="text-gray-600 dark:text-gray-400 text-xs mb-3 line-clamp-2">
                         {novel.description}
                       </p>
 
@@ -211,18 +211,18 @@ export default function MyNovelsPage() {
                           Xem
                         </Link>
                         <Link
+                          href={`/novels/edit/${novel.id}`}
+                          className="flex-1 flex items-center justify-center px-3 py-2 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Sửa
+                        </Link>
+                        <Link
                           href={`/my-novels/${novel.id}/chapters`}
                           className="flex-1 flex items-center justify-center px-3 py-2 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
                         >
                           <Plus className="w-4 h-4 mr-1" />
                           Chương
-                        </Link>
-                        <Link
-                          href={`/novels/edit/${novel.id}`}
-                          className="flex-1 flex items-center justify-center px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Sửa
                         </Link>
                       </div>
                     </div>

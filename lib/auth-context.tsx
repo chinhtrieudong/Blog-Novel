@@ -51,8 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const token = localStorage.getItem("accessToken");
         if (token) {
           // Kiểm tra token có hợp lệ không bằng cách gọi API
-          const response = await apiClient.getProfile();
-          setUser(response.data);
+          const userData = await apiClient.getProfileSafe();
+          if (userData) {
+            setUser(userData);
+          } else {
+            // Token hết hạn hoặc không hợp lệ, xóa token
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            setUser(null);
+          }
         } else {
           // Nếu không có token, đảm bảo xóa sạch localStorage
           localStorage.removeItem("accessToken");
@@ -62,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error("Failed to check auth status:", error);
-      // Nếu có lỗi (token hết hạn, không hợp lệ), xóa token và reset state
+      // Nếu có lỗi khác (không phải authentication), log và reset
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");

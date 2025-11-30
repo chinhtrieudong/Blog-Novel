@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { NovelResponse, ChapterResponse, CommentResponse } from "@/types/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ChapterDetailPage({
   params,
@@ -48,7 +49,10 @@ export default function ChapterDetailPage({
   const [isChapterModalOpen, setIsChapterModalOpen] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [likesLoading, setLikesLoading] = useState<Set<number>>(new Set());
+  const [likedComments, setLikedComments] = useState<Set<number>>(new Set());
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!novelId || !chapterId) return;
@@ -70,6 +74,79 @@ export default function ChapterDetailPage({
         } catch (error) {
           console.error("Failed to increment chapter views:", error);
           // Don't fail the page load if view increment fails
+        }
+
+        // Update reading progress for progress tracking
+        try {
+          console.log("run here to update progress");
+          console.log("Updating reading progress for chapter:", chapterId);
+
+          // First, check if this novel has reading progress (i.e., it's saved)
+          console.log("Getting reading progress...");
+          const progressResponse = await apiClient.getUserReadingProgress();
+          console.log("Reading progress response:", progressResponse);
+
+          if (progressResponse.data?.progressList) {
+            // Find if this novel has progress tracking
+            const novelProgress = progressResponse.data.progressList.find(
+              (progress: any) => progress.novelId === novelId
+            );
+            console.log("Found novel progress:", novelProgress);
+
+            if (novelProgress) {
+              // Novel has progress tracking, update it
+              console.log("run here to update progress");
+
+              // Get all chapters to determine the sequential chapter number
+              console.log("Getting chapters list for chapter numbering...");
+              const chaptersResponse = await apiClient.getChapters(novelId!);
+              const allChapters = chaptersResponse.data || [];
+              console.log("Chapters response:", allChapters.length, "chapters");
+
+              // Find the position of current chapter in the sorted list
+              const currentChapterIndex = allChapters.findIndex(
+                (ch: any) => ch.id === chapterId
+              );
+              console.log("Current chapter index:", currentChapterIndex);
+
+              // Use sequential chapter number (1-based) instead of chapter ID
+              const readChapters =
+                currentChapterIndex !== -1
+                  ? currentChapterIndex + 1
+                  : chapterId!;
+              const lastRead = new Date().toISOString();
+              console.log(
+                "Using sequential chapter number as readChapters:",
+                readChapters,
+                "lastRead:",
+                lastRead
+              );
+
+              // Use the novelId from progress as the saved novel ID
+              const novelSaveId = novelProgress.novelId;
+              console.log(
+                "Using novelId from progress as novelSaveId:",
+                novelSaveId
+              );
+
+              console.log("Calling updateReadingProgress API...");
+              await apiClient.updateReadingProgress(
+                novelSaveId,
+                readChapters,
+                lastRead
+              );
+              console.log("Reading progress updated successfully");
+            } else {
+              console.log(
+                "Novel not found in reading progress - not saved by user"
+              );
+            }
+          } else {
+            console.log("No reading progress data available");
+          }
+        } catch (error) {
+          console.error("Failed to update reading progress:", error);
+          // Don't fail the page load if progress update fails
         }
 
         // Fetch chapter data
@@ -132,6 +209,24 @@ export default function ChapterDetailPage({
     );
   }
 
+  // Calculate word count from chapter content
+  const calculateWordCount = (htmlContent: string): number => {
+    if (!htmlContent) return 0;
+
+    // Remove HTML tags and decode HTML entities
+    const textContent = htmlContent
+      .replace(/<[^>]*>/g, "") // Remove HTML tags
+      .replace(/&nbsp;/g, " ") // Replace non-breaking spaces
+      .replace(/&[a-zA-Z0-9#]+;/g, " ") // Replace other HTML entities
+      .trim();
+
+    // Split by whitespace and filter out empty strings
+    const words = textContent.split(/\s+/).filter((word) => word.length > 0);
+    return words.length;
+  };
+
+  const wordCount = chapter ? calculateWordCount(chapter.content) : 0;
+
   // Find previous and next chapters
   const currentIndex = chapters.findIndex((ch) => ch.id === chapterId);
   const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
@@ -165,6 +260,42 @@ export default function ChapterDetailPage({
       // You might want to show a toast notification here
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  // Handle like comment
+  const handleLikeComment = async (commentId: number) => {
+    if (likesLoading.has(commentId)) return;
+
+    setLikesLoading((prev) => new Set([...prev, commentId]));
+
+    try {
+      await apiClient.likeComment(commentId);
+
+      // Add to liked comments and reload comments to get updated like counts
+      setLikedComments((prev) => new Set([...prev, commentId]));
+      if (novelId && chapterId) {
+        const response = await apiClient.getChapterComments(novelId, chapterId);
+        setChapterComments(response.data || []);
+      }
+
+      toast({
+        title: "Thành công",
+        description: "Đã thích bình luận!",
+      });
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể thích bình luận. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setLikesLoading((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(commentId);
+        return newSet;
+      });
     }
   };
 
@@ -232,7 +363,7 @@ export default function ChapterDetailPage({
               </div>
               <div className="flex items-center">
                 <BookOpen className="w-4 h-4 mr-1" />
-                <span>{chapter.wordCount?.toLocaleString() ?? "0"} từ</span>
+                <span>{wordCount.toLocaleString()} từ</span>
               </div>
             </div>
           </div>
@@ -352,9 +483,21 @@ export default function ChapterDetailPage({
                       </p>
                     </div>
                     <div className="flex items-center mt-2 space-x-4">
-                      <button className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400">
-                        <Heart className="w-4 h-4 mr-1" />
-                        {comment.likes}
+                      <button
+                        onClick={() => handleLikeComment(comment.id)}
+                        disabled={likesLoading.has(comment.id)}
+                        className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Heart
+                          className={`w-4 h-4 mr-1 ${
+                            likesLoading.has(comment.id)
+                              ? "animate-pulse"
+                              : likedComments.has(comment.id)
+                              ? "fill-red-500 text-red-500"
+                              : ""
+                          }`}
+                        />
+                        <span>{comment.likeCount || comment.likes || 0}</span>
                       </button>
                       <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400">
                         Trả lời

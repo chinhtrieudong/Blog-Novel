@@ -327,10 +327,10 @@ export default function BlogPage() {
                         src={
                           post.coverImageUrl ||
                           post.coverImage ||
-                          "/placeholder-blog.svg"
+                          "/default-img.png"
                         }
                         alt={post.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-fill"
                       />
                     </div>
 

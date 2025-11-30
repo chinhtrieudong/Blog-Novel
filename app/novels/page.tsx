@@ -213,7 +213,7 @@ export default function NovelsPage() {
       </section>
 
       {/* All Novels Section */}
-      <div className="py-16 bg-gray-50 dark:bg-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -328,7 +328,7 @@ export default function NovelsPage() {
                 <div className="flex">
                   <div className="w-32 h-48 flex-shrink-0">
                     <img
-                      src={novel.coverImage || "/placeholder-novel.svg"}
+                      src={novel.coverImage || "/default-img.png"}
                       alt={novel.title}
                       className="w-full h-full object-cover"
                     />

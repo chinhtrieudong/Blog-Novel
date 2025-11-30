@@ -165,7 +165,7 @@ export default function MyPostsPage() {
                   >
                     <div className="aspect-video bg-gray-200 dark:bg-gray-700">
                       <img
-                        src={post.coverImage || "/placeholder-blog.svg"}
+                        src={post.coverImage || "/default-img.png"}
                         alt={post.title}
                         className="w-full h-full object-cover"
                       />
