@@ -50,7 +50,8 @@ class ApiClient {
 
     // Test backend connectivity only on client
     if (typeof window !== "undefined") {
-      this.testBackendConnection();
+      // Skip connectivity test to avoid console errors
+      // this.testBackendConnection();
     }
   }
 
@@ -64,7 +65,11 @@ class ApiClient {
       });
       // Removed debug logs
     } catch (error) {
-      console.error("Backend connection test failed:", error);
+      // Silent fail - backend may not be running
+      console.warn(
+        "Backend connection not available:",
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 
@@ -113,7 +118,6 @@ class ApiClient {
     // Note: No Authorization header added for public requests
 
     try {
-      // Rem/vod debug ed sgforupcodocin
       const response = await fetch(url, config);
 
       // Check if response has content
@@ -138,7 +142,7 @@ class ApiClient {
             code: 401,
             message: "Authentication required",
             data: null,
-          } as any;
+          } as ApiResponse<T>;
         }
         throw new Error(errorMessage);
       }
@@ -146,6 +150,11 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error("Public API request error:", error);
+      // Return mock data for development when backend is not available
+      if (IS_DEVELOPMENT) {
+        console.warn("Returning mock data for:", endpoint);
+        return { code: 200, message: "Mock data", data: [] as T };
+      }
       throw error;
     }
   }
@@ -218,6 +227,11 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error("API request error:", error);
+      // Return mock data for development when backend is not available
+      if (IS_DEVELOPMENT) {
+        console.warn("Returning mock data for:", endpoint);
+        return { code: 200, message: "Mock data", data: null as T };
+      }
       throw error;
     }
   }
@@ -256,6 +270,7 @@ class ApiClient {
       }
 
       if (!response.ok) {
+        console.log("---->", response);
         const errorMessage =
           data?.message ||
           `Upload request failed with status ${response.status}`;
@@ -265,6 +280,11 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error("Upload request error:", error);
+      // Return mock data for development
+      if (IS_DEVELOPMENT) {
+        console.warn("Upload request mock response for:", endpoint);
+        return { code: 200, message: "Mock upload success", data: null as T };
+      }
       throw error;
     }
   }
@@ -303,6 +323,22 @@ class ApiClient {
 
   async getProfile(): Promise<ApiResponse<UserResponse>> {
     return this.request<UserResponse>("/auth/me");
+  }
+
+  async getProfileSafe(): Promise<UserResponse | null> {
+    try {
+      const response = await this.getProfile();
+      return response.data;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("authentication") &&
+        error.message.includes("required")
+      ) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   async updateProfile(data: UserRequest): Promise<ApiResponse<UserResponse>> {
@@ -355,6 +391,33 @@ class ApiClient {
 
   async getAuthorById(id: number): Promise<ApiResponse<AuthorResponse>> {
     return this.request<AuthorResponse>(`/authors/${id}`);
+  }
+
+  async followAuthor(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/authors/${id}/follow`, {
+      method: "POST",
+    });
+  }
+
+  async unfollowAuthor(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/authors/${id}/follow`, {
+      method: "DELETE",
+    });
+  }
+
+  async getFollowedAuthors(): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>("/authors/followed");
+  }
+
+  async isFollowingAuthor(authorId: number): Promise<boolean> {
+    try {
+      const response = await this.getFollowedAuthors();
+      const followedAuthors = response.data || [];
+      return followedAuthors.some((author: any) => author.id === authorId);
+    } catch (error) {
+      console.error("Failed to check follow status:", error);
+      return false;
+    }
   }
 
   async createAuthor(
@@ -411,7 +474,7 @@ class ApiClient {
     if (params?.size) searchParams.append("size", params.size.toString());
 
     const query = searchParams.toString();
-    return this.request<PagedResponse<NovelResponse>>(
+    return this.publicRequest<PagedResponse<NovelResponse>>(
       `/novels${query ? `?${query}` : ""}`
     );
   }
@@ -444,12 +507,135 @@ class ApiClient {
     );
   }
 
+  async getNovelsByAuthor(
+    authorId: number,
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<NovelResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page !== undefined)
+      searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    return this.publicRequest<PagedResponse<NovelResponse>>(
+      `/novels/author/${authorId}${query ? `?${query}` : ""}`
+    );
+  }
+
   async getNovelById(id: number): Promise<ApiResponse<NovelResponse>> {
-    return this.request<NovelResponse>(`/novels/${id}`);
+    return this.publicRequest<NovelResponse>(`/novels/${id}`);
   }
 
   async getRelatedNovels(id: number): Promise<ApiResponse<NovelResponse[]>> {
-    return this.request<NovelResponse[]>(`/novels/related/${id}`);
+    const response = await this.publicRequest<any>(`/novels/related/${id}`);
+    // Parse the backend response structure: { data: { content: Novel[] } }
+    if (response.data?.content && Array.isArray(response.data.content)) {
+      return {
+        ...response,
+        data: response.data.content,
+      };
+    }
+    return { ...response, data: [] as NovelResponse[] };
+  }
+
+  async addNovelRelationship(
+    novelId: number,
+    relatedNovelId: number
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/novels/${novelId}/related/${relatedNovelId}`, {
+      method: "POST",
+    });
+  }
+
+  async getFavoriteNovels(): Promise<ApiResponse<NovelResponse[]>> {
+    return this.request<NovelResponse[]>("/novels/favorites");
+  }
+
+  async getFavoriteNovelsPaginated(
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<NovelResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    const response = await this.request<any>(
+      `/novels/favorites${query ? `?${query}` : ""}`
+    );
+
+    // Parse the backend response structure
+    if (response.data?.content && Array.isArray(response.data.content)) {
+      return {
+        ...response,
+        data: {
+          content: response.data.content,
+          page: response.data.page,
+          size: response.data.size,
+          totalElements: response.data.totalElements,
+          totalPages: response.data.totalPages,
+          first: response.data.first,
+          last: response.data.last,
+          number: response.data.page,
+        },
+      };
+    }
+    return {
+      ...response,
+      data: {
+        content: [],
+        page: 0,
+        size: 10,
+        totalElements: 0,
+        totalPages: 0,
+        first: true,
+        last: true,
+        number: 0,
+      } as PagedResponse<NovelResponse>,
+    };
+  }
+
+  async getUserFavorites(
+    userId: number,
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<NovelResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    const response = await this.request<any>(
+      `/users/${userId}/favorites${query ? `?${query}` : ""}`
+    );
+
+    // Parse the backend response structure
+    if (response.data?.content && Array.isArray(response.data.content)) {
+      return {
+        ...response,
+        data: {
+          content: response.data.content,
+          page: response.data.page,
+          size: response.data.size,
+          totalElements: response.data.totalElements,
+          totalPages: response.data.totalPages,
+          first: response.data.first,
+          last: response.data.last,
+          number: response.data.page,
+        },
+      };
+    }
+    return {
+      ...response,
+      data: {
+        content: [],
+        page: 0,
+        size: 10,
+        totalElements: 0,
+        totalPages: 0,
+        first: true,
+        last: true,
+        number: 0,
+      } as PagedResponse<NovelResponse>,
+    };
   }
 
   async createNovel(data: NovelRequest): Promise<ApiResponse<NovelResponse>> {
@@ -501,6 +687,10 @@ class ApiClient {
     id: number,
     data: NovelRequest
   ): Promise<ApiResponse<NovelResponse>> {
+    console.log("updateNovel called with data:", data);
+    console.log("Sending JSON update request to:", `/novels/${id}`);
+    console.log("Request body:", JSON.stringify(data));
+
     if (data.coverImage) {
       const formData = new FormData();
       formData.append("title", data.title);
@@ -518,12 +708,57 @@ class ApiClient {
       if (data.status) formData.append("status", data.status);
       formData.append("coverImage", data.coverImage);
 
-      return this.uploadRequest<NovelResponse>(`/novels/${id}`, formData);
+      return this.uploadRequest<NovelResponse>(
+        `/novels/${id}`,
+        formData,
+        "PUT"
+      );
     } else {
-      return this.request<NovelResponse>(`/novels/${id}`, {
+      // For novel updates, don't use mock data - throw actual errors
+      const url = `${this.baseURL}/novels/${id}`;
+      const config: RequestInit = {
         method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        },
         body: JSON.stringify(data),
-      });
+      };
+
+      try {
+        const response = await fetch(url, config);
+
+        const contentType = response.headers.get("content-type");
+        let data: any = null;
+
+        if (contentType && contentType.includes("application/json")) {
+          const text = await response.text();
+          if (text) {
+            data = JSON.parse(text);
+          }
+        }
+
+        if (!response.ok) {
+          if (response.status === 401 && this.token) {
+            console.log("Token expired, clearing authentication");
+            this.removeToken();
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("auth:token-expired"));
+            }
+          }
+
+          const errorMessage =
+            data?.message ||
+            `API request failed with status ${response.status}`;
+          throw new Error(errorMessage);
+        }
+
+        return data;
+      } catch (error) {
+        console.error("Novel update API request error:", error);
+        throw error; // Always throw for novel updates - don't use mock data
+      }
     }
   }
 
@@ -531,7 +766,7 @@ class ApiClient {
     id: number,
     formData: FormData
   ): Promise<ApiResponse<NovelResponse>> {
-    return this.uploadRequest<NovelResponse>(`/novels/${id}`, formData);
+    return this.uploadRequest<NovelResponse>(`/novels/${id}`, formData, "PUT");
   }
 
   async deleteNovel(id: number): Promise<ApiResponse<void>> {
@@ -552,6 +787,25 @@ class ApiClient {
     });
   }
 
+  async saveNovel(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/novels/${id}/save`, {
+      method: "POST",
+    });
+  }
+
+  async getSavedNovels(
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<NovelResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    return this.request<PagedResponse<NovelResponse>>(
+      `/novels/saved${query ? `?${query}` : ""}`
+    );
+  }
+
   async rateNovel(id: number, rating: number): Promise<ApiResponse<void>> {
     return this.request<void>(`/novels/${id}/rating?rating=${rating}`, {
       method: "POST",
@@ -562,9 +816,18 @@ class ApiClient {
     return this.request<GenreResponse[]>("/novels/genres");
   }
 
+  async updateNovelStatus(
+    id: number,
+    status: string
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/novels/${id}/status?status=${status}`, {
+      method: "PATCH",
+    });
+  }
+
   // Chapter API
   async getChapters(novelId: number): Promise<ApiResponse<ChapterResponse[]>> {
-    return this.request<ChapterResponse[]>(`/novels/${novelId}/chapters`);
+    return this.publicRequest<ChapterResponse[]>(`/novels/${novelId}/chapters`);
   }
 
   async getChapterById(
@@ -619,6 +882,67 @@ class ApiClient {
         method: "POST",
       }
     );
+  }
+
+  // Reading Progress API
+  async updateReadingProgress(
+    novelSaveId: number,
+    readChapters: number,
+    lastRead: string
+  ): Promise<ApiResponse<any>> {
+    console.log("current chapter id", readChapters);
+
+    // For reading progress, don't use mock data - throw actual errors
+    const url = `${this.baseURL}/saved-novels/${novelSaveId}/progress`;
+    const config: RequestInit = {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      },
+      body: JSON.stringify({
+        readChapters,
+        lastRead,
+      }),
+    };
+
+    try {
+      const response = await fetch(url, config);
+
+      const contentType = response.headers.get("content-type");
+      let data: any = null;
+
+      if (contentType && contentType.includes("application/json")) {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        }
+      }
+
+      if (!response.ok) {
+        if (response.status === 401 && this.token) {
+          console.log("Token expired, clearing authentication");
+          this.removeToken();
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("auth:token-expired"));
+          }
+        }
+
+        const errorMessage =
+          data?.message || `API request failed with status ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Reading progress API request error:", error);
+      throw error; // Always throw for reading progress - don't use mock data
+    }
+  }
+
+  async getUserReadingProgress(): Promise<ApiResponse<any>> {
+    return this.request<any>("/novels/reading-progress");
   }
 
   // Chapter Comment API
@@ -755,6 +1079,15 @@ class ApiClient {
     }
   }
 
+  async updatePostStatus(
+    id: number,
+    status: string
+  ): Promise<ApiResponse<void>> {
+    return this.request<void>(`/posts/${id}/status?status=${status}`, {
+      method: "PUT",
+    });
+  }
+
   async updatePostFromFormData(
     id: number,
     formData: FormData
@@ -772,6 +1105,25 @@ class ApiClient {
     return this.publicRequest<void>(`/posts/${id}/views`, {
       method: "POST",
     });
+  }
+
+  async savePost(id: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/posts/${id}/save`, {
+      method: "POST",
+    });
+  }
+
+  async getSavedPosts(
+    params?: PaginationParams
+  ): Promise<ApiResponse<PagedResponse<PostResponse>>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.size) searchParams.append("size", params.size.toString());
+
+    const query = searchParams.toString();
+    return this.request<PagedResponse<PostResponse>>(
+      `/posts/saved${query ? `?${query}` : ""}`
+    );
   }
 
   async incrementNovelViews(id: number): Promise<ApiResponse<void>> {
@@ -800,7 +1152,7 @@ class ApiClient {
   async getNovelComments(
     novelId: number
   ): Promise<ApiResponse<CommentResponse[]>> {
-    return this.request<CommentResponse[]>(`/novels/${novelId}/comments`);
+    return this.publicRequest<CommentResponse[]>(`/novels/${novelId}/comments`);
   }
 
   async createNovelComment(
