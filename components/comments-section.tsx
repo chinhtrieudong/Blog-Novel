@@ -5,6 +5,7 @@ import { CommentResponse } from "@/types/api";
 import CommentForm from "./comment-form";
 import apiClient from "@/lib/api-client";
 import { Loader2, Heart, MessageCircle, User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommentsSectionProps {
   postId: number;
@@ -18,6 +19,9 @@ export default function CommentsSection({
   const [comments, setComments] = useState<CommentResponse[]>(initialComments);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [likesLoading, setLikesLoading] = useState<Set<number>>(new Set());
+  const [likedComments, setLikedComments] = useState<Set<number>>(new Set());
+  const { toast } = useToast();
 
   const loadComments = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
@@ -37,6 +41,38 @@ export default function CommentsSection({
   const handleCommentAdded = () => {
     // Reload comments after adding a new one
     loadComments(false);
+  };
+
+  const handleLikeComment = async (commentId: number) => {
+    if (likesLoading.has(commentId)) return;
+
+    setLikesLoading((prev) => new Set([...prev, commentId]));
+
+    try {
+      await apiClient.likeComment(commentId);
+
+      // Add to liked comments set and reload comments
+      setLikedComments((prev) => new Set([...prev, commentId]));
+      await loadComments(true);
+
+      toast({
+        title: "Thành công",
+        description: "Đã thích bình luận!",
+      });
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể thích bình luận. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setLikesLoading((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(commentId);
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -99,8 +135,20 @@ export default function CommentsSection({
                   {comment.content}
                 </p>
                 <div className="flex items-center space-x-4 text-sm">
-                  <button className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                    <Heart className="w-4 h-4 mr-1" />
+                  <button
+                    onClick={() => handleLikeComment(comment.id)}
+                    disabled={likesLoading.has(comment.id)}
+                    className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Heart
+                      className={`w-4 h-4 mr-1 ${
+                        likesLoading.has(comment.id)
+                          ? "animate-pulse"
+                          : likedComments.has(comment.id)
+                          ? "fill-red-500 text-red-500"
+                          : ""
+                      }`}
+                    />
                     <span>{comment.likeCount || comment.likes || 0}</span>
                   </button>
                   {comment.replies && comment.replies.length > 0 && (
@@ -145,8 +193,20 @@ export default function CommentsSection({
                             {reply.content}
                           </p>
                           <div className="flex items-center space-x-3 text-xs mt-1">
-                            <button className="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                              <Heart className="w-3 h-3 mr-1" />
+                            <button
+                              onClick={() => handleLikeComment(reply.id)}
+                              disabled={likesLoading.has(reply.id)}
+                              className="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Heart
+                                className={`w-3 h-3 mr-1 ${
+                                  likesLoading.has(reply.id)
+                                    ? "animate-pulse"
+                                    : likedComments.has(reply.id)
+                                    ? "fill-red-500 text-red-500"
+                                    : ""
+                                }`}
+                              />
                               <span>{reply.likeCount || reply.likes}</span>
                             </button>
                           </div>

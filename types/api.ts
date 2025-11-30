@@ -85,6 +85,7 @@ export interface PagedResponse<T> {
   totalPages: number;
   size: number;
   number: number;
+  page: number;
   first: boolean;
   last: boolean;
 }
@@ -113,7 +114,7 @@ export interface NovelResponse {
   coverImage?: string;
   totalChapters: number;
   viewCount: number;
-  totalLikes: number;
+  likeCount: number;
   avgRating: number;
   createdAt: string;
   updatedAt: string;

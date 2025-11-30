@@ -16,6 +16,9 @@ import {
   Settings,
   LogOut,
   UserCircle,
+  Heart,
+  Users,
+  Bookmark,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -111,14 +114,12 @@ export default function Navigation() {
                     <DropdownMenuContent
                       align="end"
                       side="bottom"
-                      className="w-56"
+                      className="w-64"
                     >
-                      {/* User Management Section */}
+                      {/* Content Creation Section */}
                       <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Quản lý
+                        Tạo nội dung
                       </div>
-
-                      {/* Create Post Button */}
                       <DropdownMenuItem asChild>
                         <Link
                           href="/blog/new"
@@ -128,6 +129,11 @@ export default function Navigation() {
                           <span>Viết blog</span>
                         </Link>
                       </DropdownMenuItem>
+
+                      {/* My Content Section */}
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Nội dung của tôi
+                      </div>
 
                       {/* My Posts Button */}
                       <DropdownMenuItem asChild>
@@ -148,6 +154,56 @@ export default function Navigation() {
                         >
                           <BookOpen className="w-4 h-4" />
                           <span>Tiểu thuyết của tôi</span>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      {/* Account Management Section */}
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Quản lý tài khoản
+                      </div>
+
+                      {/* Favorite Novels */}
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/favorites/novels"
+                          className="flex items-center space-x-2"
+                        >
+                          <Heart className="w-4 h-4" />
+                          <span>Tiểu thuyết yêu thích</span>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      {/* Followed Authors */}
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/followed-authors"
+                          className="flex items-center space-x-2"
+                        >
+                          <Users className="w-4 h-4" />
+                          <span>Tác giả đã follow</span>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      {/* Saved Posts */}
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/saved/posts"
+                          className="flex items-center space-x-2"
+                        >
+                          <Bookmark className="w-4 h-4" />
+                          <span>Bài viết đã lưu</span>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      {/* Saved Novels */}
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/saved/novels"
+                          className="flex items-center space-x-2"
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <span>Tiểu thuyết đã lưu</span>
                         </Link>
                       </DropdownMenuItem>
 
@@ -281,11 +337,8 @@ export default function Navigation() {
                       </span>
                     </div>
 
-                    {/* User Management Section */}
+                    {/* Content Creation */}
                     <div className="mb-3">
-                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-2">
-                        Quản lý
-                      </div>
                       <div className="space-y-1">
                         <Link
                           href="/blog/new"
@@ -310,6 +363,47 @@ export default function Navigation() {
                         >
                           <BookOpen className="w-4 h-4" />
                           <span>Tiểu thuyết của tôi</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Account Management Section */}
+                    <div className="mb-3">
+                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-2">
+                        Quản lý tài khoản
+                      </div>
+                      <div className="space-y-1">
+                        <Link
+                          href="/favorites/novels"
+                          className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors w-full"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <Heart className="w-4 h-4" />
+                          <span>Tiểu thuyết yêu thích</span>
+                        </Link>
+                        <Link
+                          href="/followed-authors"
+                          className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors w-full"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <Users className="w-4 h-4" />
+                          <span>Tác giả đã follow</span>
+                        </Link>
+                        <Link
+                          href="/saved/posts"
+                          className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors w-full"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <Bookmark className="w-4 h-4" />
+                          <span>Bài viết đã lưu</span>
+                        </Link>
+                        <Link
+                          href="/saved/novels"
+                          className="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors w-full"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <span>Tiểu thuyết đã lưu</span>
                         </Link>
                       </div>
                     </div>

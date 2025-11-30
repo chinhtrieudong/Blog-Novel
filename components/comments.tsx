@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MessageCircle, Heart } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { CommentResponse } from "@/types/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommentsProps {
   novelId: number;
@@ -14,6 +15,9 @@ export default function Comments({ novelId, initialComments }: CommentsProps) {
   const [comments, setComments] = useState<CommentResponse[]>(initialComments);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [likesLoading, setLikesLoading] = useState<Set<number>>(new Set());
+  const [likedComments, setLikedComments] = useState<Set<number>>(new Set());
+  const { toast } = useToast();
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +40,39 @@ export default function Comments({ novelId, initialComments }: CommentsProps) {
       // You might want to show an error toast here
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleLikeComment = async (commentId: number) => {
+    if (likesLoading.has(commentId)) return;
+
+    setLikesLoading((prev) => new Set([...prev, commentId]));
+
+    try {
+      await apiClient.likeComment(commentId);
+
+      // Add to liked comments and reload comments to get updated like counts
+      setLikedComments((prev) => new Set([...prev, commentId]));
+      const response = await apiClient.getNovelComments(novelId);
+      setComments(response.data || []);
+
+      toast({
+        title: "Thành công",
+        description: "Đã thích bình luận!",
+      });
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể thích bình luận. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setLikesLoading((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(commentId);
+        return newSet;
+      });
     }
   };
 
@@ -104,9 +141,21 @@ export default function Comments({ novelId, initialComments }: CommentsProps) {
                   </p>
                 </div>
                 <div className="flex items-center mt-2 space-x-4">
-                  <button className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                    <Heart className="w-4 h-4 mr-1" />
-                    {comment.likes}
+                  <button
+                    onClick={() => handleLikeComment(comment.id)}
+                    disabled={likesLoading.has(comment.id)}
+                    className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Heart
+                      className={`w-4 h-4 mr-1 ${
+                        likesLoading.has(comment.id)
+                          ? "animate-pulse"
+                          : likedComments.has(comment.id)
+                          ? "fill-red-500 text-red-500"
+                          : ""
+                      }`}
+                    />
+                    <span>{comment.likeCount || comment.likes || 0}</span>
                   </button>
                 </div>
               </div>
