@@ -11,7 +11,7 @@ import {
   Eye,
 } from "lucide-react";
 import apiClient from "@/lib/api-client";
-import Comments from "@/components/comments";
+import CommentsSection from "@/components/comments-section";
 import AuthorFollowButton from "@/components/author-follow-button";
 import NovelSidebar from "@/components/novel-sidebar";
 import FavoriteDisplay from "@/components/favorite-display";
@@ -293,7 +293,11 @@ export default async function NovelDetailPage({
             </div>
 
             {/* Comments */}
-            <Comments novelId={novelId} initialComments={comments} />
+            <CommentsSection
+              postId={novelId}
+              contentType="novel"
+              initialComments={comments}
+            />
           </div>
 
           <NovelSidebar

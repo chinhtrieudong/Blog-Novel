@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { NovelResponse, ChapterResponse, CommentResponse } from "@/types/api";
-import { useToast } from "@/hooks/use-toast";
+import CommentsSection from "@/components/comments-section";
 
 export default function ChapterDetailPage({
   params,
@@ -43,16 +43,10 @@ export default function ChapterDetailPage({
   const [novel, setNovel] = useState<NovelResponse | null>(null);
   const [chapter, setChapter] = useState<ChapterResponse | null>(null);
   const [chapters, setChapters] = useState<ChapterResponse[]>([]);
-  const [chapterComments, setChapterComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isChapterModalOpen, setIsChapterModalOpen] = useState(false);
-  const [newComment, setNewComment] = useState("");
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [likesLoading, setLikesLoading] = useState<Set<number>>(new Set());
-  const [likedComments, setLikedComments] = useState<Set<number>>(new Set());
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!novelId || !chapterId) return;
@@ -163,12 +157,7 @@ export default function ChapterDetailPage({
         const chaptersResponse = await apiClient.getChapters(novelId!);
         setChapters(chaptersResponse.data || []);
 
-        // Fetch chapter comments
-        const commentsResponse = await apiClient.getChapterComments(
-          novelId!,
-          chapterId!
-        );
-        setChapterComments(commentsResponse.data || []);
+        // Comments will be loaded by CommentsSection component
       } catch (err) {
         console.error("Failed to fetch data:", err);
         setError("Không thể tải dữ liệu.");
@@ -232,72 +221,6 @@ export default function ChapterDetailPage({
   const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
   const nextChapter =
     currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
-
-  // Handle comment submission
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newComment.trim() || !novelId || !chapterId) return;
-
-    setIsSubmittingComment(true);
-
-    try {
-      const response = await apiClient.createChapterComment(
-        novelId,
-        chapterId,
-        {
-          content: newComment.trim(),
-        }
-      );
-
-      if (response.data) {
-        // Add the new comment to the beginning of the list
-        setChapterComments([response.data, ...chapterComments]);
-        setNewComment(""); // Clear the textarea
-      }
-    } catch (error) {
-      console.error("Error posting comment:", error);
-      // You might want to show a toast notification here
-    } finally {
-      setIsSubmittingComment(false);
-    }
-  };
-
-  // Handle like comment
-  const handleLikeComment = async (commentId: number) => {
-    if (likesLoading.has(commentId)) return;
-
-    setLikesLoading((prev) => new Set([...prev, commentId]));
-
-    try {
-      await apiClient.likeComment(commentId);
-
-      // Add to liked comments and reload comments to get updated like counts
-      setLikedComments((prev) => new Set([...prev, commentId]));
-      if (novelId && chapterId) {
-        const response = await apiClient.getChapterComments(novelId, chapterId);
-        setChapterComments(response.data || []);
-      }
-
-      toast({
-        title: "Thành công",
-        description: "Đã thích bình luận!",
-      });
-    } catch (error) {
-      console.error("Error liking comment:", error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể thích bình luận. Vui lòng thử lại.",
-        variant: "destructive",
-      });
-    } finally {
-      setLikesLoading((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(commentId);
-        return newSet;
-      });
-    }
-  };
 
   return (
     <div
@@ -387,7 +310,7 @@ export default function ChapterDetailPage({
               </button>
               <button className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-purple-500 dark:hover:text-purple-400">
                 <MessageCircle className="w-5 h-5" />
-                <span>{chapterComments.length}</span>
+                <span>Bình luận</span>
               </button>
             </div>
           </div>
@@ -428,87 +351,14 @@ export default function ChapterDetailPage({
         </div>
 
         {/* Comments */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-            Bình luận ({chapterComments.length})
-          </h3>
-
-          {/* Comment Form */}
-          <form onSubmit={handleCommentSubmit} className="mb-6">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Viết bình luận của bạn..."
-              className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              rows={4}
-              required
-            />
-            <div className="flex justify-end mt-2">
-              <button
-                type="submit"
-                disabled={isSubmittingComment || !newComment.trim()}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmittingComment ? "Đang gửi..." : "Gửi bình luận"}
-              </button>
-            </div>
-          </form>
-
-          {/* Comments List */}
-          <div className="space-y-4">
-            {chapterComments.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
-              </p>
-            ) : (
-              chapterComments.map((comment) => (
-                <div key={comment.id} className="flex space-x-4">
-                  <img
-                    src={comment.user?.avatarUrl || "/placeholder.svg"}
-                    alt={comment.user?.username || "User"}
-                    className="w-10 h-10 rounded-full flex-shrink-0"
-                  />
-                  <div className="flex-1">
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {comment.user?.username || "Anonymous"}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(comment.createdAt).toLocaleString("vi-VN")}
-                        </span>
-                      </div>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        {comment.content}
-                      </p>
-                    </div>
-                    <div className="flex items-center mt-2 space-x-4">
-                      <button
-                        onClick={() => handleLikeComment(comment.id)}
-                        disabled={likesLoading.has(comment.id)}
-                        className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Heart
-                          className={`w-4 h-4 mr-1 ${
-                            likesLoading.has(comment.id)
-                              ? "animate-pulse"
-                              : likedComments.has(comment.id)
-                              ? "fill-red-500 text-red-500"
-                              : ""
-                          }`}
-                        />
-                        <span>{comment.likeCount || comment.likes || 0}</span>
-                      </button>
-                      <button className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400">
-                        Trả lời
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        {novelId && chapterId && (
+          <CommentsSection
+            postId={novelId}
+            contentType="chapter"
+            chapterId={chapterId}
+            initialComments={[]}
+          />
+        )}
       </div>
 
       {/* Chapter List Modal */}

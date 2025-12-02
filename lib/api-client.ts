@@ -945,30 +945,6 @@ class ApiClient {
     return this.request<any>("/novels/reading-progress");
   }
 
-  // Chapter Comment API
-  async getChapterComments(
-    novelId: number,
-    chapterId: number
-  ): Promise<ApiResponse<CommentResponse[]>> {
-    return this.request<CommentResponse[]>(
-      `/novels/${novelId}/chapters/${chapterId}/comments`
-    );
-  }
-
-  async createChapterComment(
-    novelId: number,
-    chapterId: number,
-    data: CommentRequest
-  ): Promise<ApiResponse<CommentResponse>> {
-    return this.request<CommentResponse>(
-      `/novels/${novelId}/chapters/${chapterId}/comments`,
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
-  }
-
   // Post API
   async getPosts(
     params?: PostQueryParams
@@ -1134,9 +1110,13 @@ class ApiClient {
 
   // Comment API
   async getPostComments(
-    postId: number
+    postId: number,
+    sortBy?: string
   ): Promise<ApiResponse<CommentResponse[]>> {
-    return this.publicRequest<CommentResponse[]>(`/posts/${postId}/comments`);
+    const query = sortBy ? `?sortBy=${sortBy}` : "";
+    return this.publicRequest<CommentResponse[]>(
+      `/posts/${postId}/comments${query}`
+    );
   }
 
   async createPostComment(
@@ -1150,9 +1130,13 @@ class ApiClient {
   }
 
   async getNovelComments(
-    novelId: number
+    novelId: number,
+    sortBy?: string
   ): Promise<ApiResponse<CommentResponse[]>> {
-    return this.publicRequest<CommentResponse[]>(`/novels/${novelId}/comments`);
+    const query = sortBy ? `?sortBy=${sortBy}` : "";
+    return this.publicRequest<CommentResponse[]>(
+      `/novels/${novelId}/comments${query}`
+    );
   }
 
   async createNovelComment(
@@ -1163,6 +1147,31 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify(data),
     });
+  }
+
+  async getChapterComments(
+    novelId: number,
+    chapterId: number,
+    sortBy?: string
+  ): Promise<ApiResponse<CommentResponse[]>> {
+    const query = sortBy ? `?sortBy=${sortBy}` : "";
+    return this.publicRequest<CommentResponse[]>(
+      `/novels/${novelId}/chapters/${chapterId}/comments${query}`
+    );
+  }
+
+  async createChapterComment(
+    novelId: number,
+    chapterId: number,
+    data: CommentRequest
+  ): Promise<ApiResponse<CommentResponse>> {
+    return this.request<CommentResponse>(
+      `/novels/${novelId}/chapters/${chapterId}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
   }
 
   async updateComment(
@@ -1183,6 +1192,18 @@ class ApiClient {
 
   async likeComment(commentId: number): Promise<ApiResponse<void>> {
     return this.request<void>(`/comments/${commentId}/like`, {
+      method: "POST",
+    });
+  }
+
+  async blockComment(commentId: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/admin/comments/${commentId}/block`, {
+      method: "POST",
+    });
+  }
+
+  async unblockComment(commentId: number): Promise<ApiResponse<void>> {
+    return this.request<void>(`/admin/comments/${commentId}/unblock`, {
       method: "POST",
     });
   }

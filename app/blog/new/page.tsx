@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api-client";
+import { CategoryMultiSelect } from "@/components/ui/category-multi-select";
+import { TagMultiSelect } from "@/components/ui/tag-multi-select";
 
 interface Category {
   id: number;
@@ -24,6 +26,9 @@ export default function NewBlogPostPage() {
   const [categoryIds, setCategoryIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<
+    { id: number; name: string; description?: string }[]
+  >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const editorRef = useRef<any>(null);
@@ -31,7 +36,7 @@ export default function NewBlogPostPage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // Fetch categories on component mount (only if authenticated)
+  // Fetch categories and set tags on component mount (only if authenticated)
   useEffect(() => {
     if (isAuthenticated && user) {
       const fetchCategories = async () => {
@@ -57,6 +62,16 @@ export default function NewBlogPostPage() {
         }
       };
       fetchCategories();
+
+      // Set hardcoded tags (TODO: fetch from API if available)
+      setTags([
+        { id: 1, name: "AI", description: "Trí tuệ nhân tạo" },
+        { id: 2, name: "Blockchain", description: "Công nghệ chuỗi khối" },
+        { id: 3, name: "Metaverse", description: "Metaverse" },
+        { id: 4, name: "Công nghệ", description: "Công nghệ" },
+        { id: 5, name: "Cuộc sống", description: "Cuộc sống" },
+        { id: 6, name: "Kinh nghiệm", description: "Kinh nghiệm" },
+      ]);
     }
   }, [isAuthenticated, user]);
 
@@ -264,55 +279,24 @@ export default function NewBlogPostPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Danh Mục (Tùy chọn)
               </label>
-              <select
-                multiple
-                value={categoryIds.map(String)}
-                onChange={(e) => {
-                  const values = Array.from(
-                    e.target.selectedOptions,
-                    (option) => parseInt(option.value)
-                  );
-                  setCategoryIds(values);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Giữ Ctrl để chọn nhiều danh mục
-              </p>
+              <CategoryMultiSelect
+                value={categoryIds}
+                onChange={setCategoryIds}
+                categories={categories}
+                placeholder="Chọn danh mục..."
+              />
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tags (Tùy chọn)
               </label>
-              <select
-                multiple
-                value={tagIds.map(String)}
-                onChange={(e) => {
-                  const values = Array.from(
-                    e.target.selectedOptions,
-                    (option) => parseInt(option.value)
-                  );
-                  setTagIds(values);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="1">AI</option>
-                <option value="2">Blockchain</option>
-                <option value="3">Metaverse</option>
-                <option value="4">Công nghệ</option>
-                <option value="5">Cuộc sống</option>
-                <option value="6">Kinh nghiệm</option>
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Giữ Ctrl để chọn nhiều tag
-              </p>
+              <TagMultiSelect
+                value={tagIds}
+                onChange={setTagIds}
+                tags={tags}
+                placeholder="Chọn tags..."
+              />
             </div>
           </div>
 
